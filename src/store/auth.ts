@@ -40,12 +40,17 @@ export const useAuth = create<AuthState>((set, get) => ({
   loading: true,
 
   init: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      set({ session, user: session.user });
-      await loadProfile(set, session.user.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        set({ session, user: session.user });
+        await loadProfile(set, session.user.id);
+      }
+    } catch (e) {
+      console.error('Auth init error:', e);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
 
     supabase.auth.onAuthStateChange(async (_event, session) => {
       set({ session, user: session?.user ?? null });

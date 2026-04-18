@@ -53,7 +53,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', height:'100dvh', background:C.bg }}>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:C.bg }}>
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
           <div style={{ width:48, height:48, borderRadius:14, background:C.primary, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -98,7 +98,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:C.bg, fontFamily:"'Manrope',system-ui,sans-serif", overflow:'hidden' }}>
+    <div style={{ height:'100vh', display:'flex', flexDirection:'column', background:C.bg, fontFamily:"'Manrope',system-ui,sans-serif", overflow:'hidden' }}>
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {content}
       </div>
