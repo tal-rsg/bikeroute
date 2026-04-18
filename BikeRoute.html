@@ -1,0 +1,2122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BikeRoute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #F2EEE3; font-family: 'Manrope', system-ui, sans-serif; color: #1F1B16; -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  button { font-family: 'Manrope', sans-serif; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+// Design tokens for BikeRoute
+window.BR = {
+  colors: {
+    // Brand
+    primary: '#E8553A',       // Laranja terroso (CTA, gravação)
+    primaryDark: '#C94222',
+    primarySoft: '#FDEDE8',
+
+    // Nature greens
+    forest: '#2D4A3E',        // Verde musgo profundo
+    forestSoft: '#E8EFE9',
+    moss: '#6B8E5A',
+    leaf: '#8FAD7A',
+
+    // Earth neutrals
+    bg: '#FAF7F0',            // Creme claro
+    bgAlt: '#F2EEE3',
+    ink: '#1F1B16',           // Marrom escuro (texto)
+    inkSoft: '#5C554A',
+    inkMute: '#8B8478',
+    line: '#E4DED1',
+    lineSoft: '#EFEADD',
+    white: '#FFFFFF',
+
+    // Semantic
+    success: '#4A8A4E',
+    danger: '#C44536',
+    warn: '#D4A04C',
+    sky: '#7FA9BF',
+  },
+  radius: { sm: 8, md: 12, lg: 20, xl: 28, pill: 999 },
+  shadow: {
+    sm: '0 1px 2px rgba(31,27,22,0.06), 0 1px 3px rgba(31,27,22,0.04)',
+    md: '0 4px 12px rgba(31,27,22,0.08), 0 2px 4px rgba(31,27,22,0.04)',
+    lg: '0 12px 32px rgba(31,27,22,0.12), 0 4px 8px rgba(31,27,22,0.06)',
+  },
+  font: {
+    sans: "'Manrope', system-ui, -apple-system, sans-serif",
+    mono: "'DM Mono', 'JetBrains Mono', ui-monospace, monospace",
+  },
+};
+
+// Utility icon renderer — stroke-based, minimal line icons
+window.Icon = function Icon({ name, size = 24, color = 'currentColor', stroke = 2, fill = 'none' }) {
+  const paths = {
+    home: <><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></>,
+    route: <><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v3a4 4 0 004 4h4a4 4 0 014 0"/></>,
+    record: <circle cx="12" cy="12" r="8" fill={color} stroke="none"/>,
+    play: <path d="M8 5l12 7-12 7V5z" fill={color} stroke={color} strokeLinejoin="round"/>,
+    pause: <><rect x="7" y="5" width="4" height="14" fill={color} stroke="none"/><rect x="13" y="5" width="4" height="14" fill={color} stroke="none"/></>,
+    stop: <rect x="6" y="6" width="12" height="12" fill={color} stroke="none" rx="2"/>,
+    user: <><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></>,
+    lock: <><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></>,
+    eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></>,
+    menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
+    chevronRight: <path d="M9 6l6 6-6 6"/>,
+    chevronLeft: <path d="M15 6l-9 6 9 6"/>,
+    chevronDown: <path d="M6 9l6 6 6-6"/>,
+    arrowRight: <><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></>,
+    arrowUp: <><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></>,
+    check: <path d="M4 12l5 5L20 6"/>,
+    plus: <><path d="M12 5v14"/><path d="M5 12h14"/></>,
+    search: <><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></>,
+    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    map: <><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/></>,
+    mountain: <><path d="M3 19l5-9 4 6 3-4 6 7z"/></>,
+    speed: <><path d="M12 14a2 2 0 100-4 2 2 0 000 4z"/><path d="M12 14l5-5"/><path d="M4 17a9 9 0 1116 0"/></>,
+    flame: <path d="M12 2s5 4 5 10a5 5 0 01-10 0c0-2 1-3 2-4-1 3 1 4 2 4 2 0 2-2 1-4 0-2 0-4 0-6z"/>,
+    trending: <><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></>,
+    heart: <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z"/>,
+    share: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></>,
+    edit: <><path d="M4 20h4l11-11-4-4L4 16v4z"/><path d="M13 5l4 4"/></>,
+    trash: <><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12"/><path d="M9 7V4h6v3"/></>,
+    camera: <><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M9 7l2-3h2l2 3"/></>,
+    image: <><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></>,
+    sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></>,
+    cloud: <path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0118 18H7z"/>,
+    wind: <><path d="M3 8h12a3 3 0 100-6"/><path d="M3 12h18"/><path d="M3 16h15a3 3 0 110 6"/></>,
+    flag: <><path d="M4 21V4"/><path d="M4 4h13l-2 4 2 4H4"/></>,
+    target: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill={color} stroke="none"/></>,
+    trophy: <><path d="M8 3h8v5a4 4 0 01-8 0V3z"/><path d="M8 5H5a2 2 0 002 4M16 5h3a2 2 0 01-2 4"/><path d="M9 13v3h6v-3M8 21h8"/><path d="M10 16v5M14 16v5"/></>,
+    users: <><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.5 3-6 7-6s7 2.5 7 6"/><circle cx="17" cy="6" r="2.5"/><path d="M17 11c3 0 5 2 5 5"/></>,
+    bike: <><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M9 17l3-7 4 7M12 10h4l-1-3M8 7h3"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></>,
+    lock2: <><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></>,
+    globe: <><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.5 3 14.5 0 18"/><path d="M12 3c-3 3.5-3 14.5 0 18"/></>,
+    notif: <><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></>,
+    x: <><path d="M6 6l12 12M18 6L6 18"/></>,
+    more: <><circle cx="5" cy="12" r="1.5" fill={color}/><circle cx="12" cy="12" r="1.5" fill={color}/><circle cx="19" cy="12" r="1.5" fill={color}/></>,
+    download: <><path d="M12 3v13M6 12l6 5 6-5M4 21h16"/></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></>,
+    droplet: <path d="M12 3s6 7 6 11a6 6 0 11-12 0c0-4 6-11 6-11z"/>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}
+      stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
+      {paths[name] || null}
+    </svg>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Map placeholder component with route overlay
+window.MapView = function MapView({
+  height = 360, variant = 'forest', showRoute = true,
+  progress = 1, showMarkers = true, interactive = true,
+}) {
+  // Simulated terrain map (SVG) — parks, roads, river
+  const C = window.BR.colors;
+
+  // Route path — a scenic loop
+  const fullPath = "M 60 420 Q 80 380 120 360 T 200 340 Q 240 330 260 300 T 280 240 Q 290 200 270 160 T 230 100 Q 210 80 180 80 T 130 110";
+  const dist = 900;
+  const offset = dist * (1 - progress);
+
+  return (
+    <div style={{
+      position: 'relative', height, width: '100%', overflow: 'hidden',
+      background: '#DDE7DB', // base green terrain
+    }}>
+      <svg viewBox="0 0 360 480" preserveAspectRatio="xMidYMid slice"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        {/* Park areas */}
+        <rect x="0" y="0" width="360" height="480" fill="#D6E3D1"/>
+        <path d="M0 0 L180 0 L150 80 L80 120 L0 100 Z" fill="#B8CFA8" opacity="0.7"/>
+        <path d="M220 60 L360 40 L360 180 L280 200 L240 140 Z" fill="#B8CFA8" opacity="0.7"/>
+        <path d="M0 300 L100 280 L140 360 L80 440 L0 420 Z" fill="#B8CFA8" opacity="0.7"/>
+        <path d="M240 360 L340 340 L360 440 L280 460 L230 420 Z" fill="#B8CFA8" opacity="0.6"/>
+
+        {/* River */}
+        <path d="M-10 200 Q 100 180 180 230 T 370 240" stroke="#B3C8D4" strokeWidth="22" fill="none" opacity="0.8"/>
+        <path d="M-10 200 Q 100 180 180 230 T 370 240" stroke="#9FBACA" strokeWidth="22" fill="none" opacity="0.3"/>
+
+        {/* Road grid — major */}
+        <g stroke="#FAF7F0" strokeWidth="8" fill="none">
+          <path d="M-10 140 Q 180 130 370 150"/>
+          <path d="M-10 340 L 370 330"/>
+          <path d="M80 -10 L 90 490"/>
+          <path d="M260 -10 L 250 490"/>
+        </g>
+        <g stroke="#E4DED1" strokeWidth="8" fill="none" strokeDasharray="4 6" opacity="0.6">
+          <path d="M-10 140 Q 180 130 370 150"/>
+          <path d="M-10 340 L 370 330"/>
+        </g>
+        {/* Minor roads */}
+        <g stroke="#FAF7F0" strokeWidth="3" fill="none" opacity="0.8">
+          <path d="M40 -10 L 50 490"/>
+          <path d="M140 -10 L 130 490"/>
+          <path d="M200 -10 L 210 490"/>
+          <path d="M320 -10 L 310 490"/>
+          <path d="M-10 60 L 370 50"/>
+          <path d="M-10 240 L 370 230"/>
+          <path d="M-10 420 L 370 410"/>
+        </g>
+
+        {/* Buildings dots */}
+        <g fill="#C9C0AB" opacity="0.5">
+          {Array.from({length: 40}).map((_, i) => {
+            const x = (i * 73) % 360;
+            const y = (i * 131) % 480;
+            return <rect key={i} x={x} y={y} width="8" height="8" rx="1"/>;
+          })}
+        </g>
+
+        {/* Trees */}
+        <g>
+          {Array.from({length: 25}).map((_, i) => {
+            const x = 20 + (i * 47) % 340;
+            const y = 30 + (i * 83) % 440;
+            return <circle key={i} cx={x} cy={y} r="4" fill="#6B8E5A" opacity="0.4"/>;
+          })}
+        </g>
+
+        {/* Route — shadow/glow then main */}
+        {showRoute && (
+          <>
+            <path d={fullPath} stroke={C.primary} strokeWidth="10" fill="none" opacity="0.2" strokeLinecap="round"/>
+            <path d={fullPath} stroke={C.primary} strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round"
+              strokeDasharray={dist} strokeDashoffset={offset}/>
+          </>
+        )}
+
+        {showMarkers && showRoute && (
+          <>
+            {/* Start marker */}
+            <circle cx="60" cy="420" r="9" fill="#FFF" stroke={C.forest} strokeWidth="3"/>
+            <circle cx="60" cy="420" r="4" fill={C.forest}/>
+            {/* End marker */}
+            <g transform="translate(130, 110)">
+              <path d="M0 -18 a 10 10 0 1 1 0.01 0 Z M0 -3 L0 5" stroke={C.primary} strokeWidth="3" fill={C.primary}/>
+              <circle cx="0" cy="-8" r="3" fill="#FFF"/>
+            </g>
+          </>
+        )}
+      </svg>
+
+      {/* Attribution overlay */}
+      <div style={{
+        position: 'absolute', bottom: 8, right: 10,
+        fontSize: 10, color: '#5C554A', opacity: 0.6,
+        fontFamily: window.BR.font.mono,
+      }}>© BikeRoute Maps</div>
+
+      {/* Compass */}
+      {interactive && (
+        <div style={{
+          position: 'absolute', top: 12, right: 12,
+          width: 36, height: 36, borderRadius: '50%',
+          background: '#FFF', boxShadow: window.BR.shadow.sm,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700, color: window.BR.colors.primary,
+          fontFamily: window.BR.font.mono,
+        }}>N</div>
+      )}
+    </div>
+  );
+};
+
+// Mini elevation profile
+window.ElevationChart = function ElevationChart({ height = 80, color }) {
+  const C = window.BR.colors;
+  color = color || C.forest;
+  const pts = [20, 35, 30, 45, 60, 55, 70, 65, 80, 72, 85, 75, 60, 50, 42, 55, 48, 35, 30, 25];
+  const w = 300;
+  const stepX = w / (pts.length - 1);
+  const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${i*stepX} ${height - p*(height/100)*0.9 - 4}`).join(' ');
+  const fill = path + ` L ${w} ${height} L 0 ${height} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" style={{width:'100%', height, display:'block'}}>
+      <path d={fill} fill={color} opacity="0.15"/>
+      <path d={path} stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Phone chrome — status bar + home indicator (simpler Android look)
+window.PhoneChrome = function PhoneChrome({ children, dark = false }) {
+  const C = window.BR.colors;
+  const fg = dark ? '#FFFFFF' : C.ink;
+  return (
+    <div style={{
+      width: 390, height: 820,
+      borderRadius: 44, overflow: 'hidden',
+      background: dark ? '#0F0E0C' : C.bg,
+      border: '10px solid #1A1814',
+      boxShadow: '0 40px 100px rgba(31,27,22,0.25), 0 12px 30px rgba(31,27,22,0.12)',
+      display: 'flex', flexDirection: 'column', position: 'relative',
+      fontFamily: window.BR.font.sans,
+    }}>
+      {/* Status bar */}
+      <div style={{
+        height: 36, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 24px', color: fg, fontSize: 14, fontWeight: 600,
+        letterSpacing: 0.2, position: 'relative', zIndex: 10,
+      }}>
+        <span style={{fontFamily: window.BR.font.mono, fontSize: 13}}>9:30</span>
+        {/* Camera notch */}
+        <div style={{
+          position: 'absolute', left: '50%', top: 8, transform: 'translateX(-50%)',
+          width: 22, height: 22, borderRadius: '50%', background: '#0A0908',
+        }}/>
+        <div style={{display:'flex', alignItems:'center', gap: 5}}>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill={fg}><path d="M7 10L0 3a9.9 9.9 0 0114 0L7 10z"/></svg>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill={fg}><rect x="0" y="6" width="3" height="4" rx="0.5"/><rect x="4" y="4" width="3" height="6" rx="0.5"/><rect x="8" y="2" width="3" height="8" rx="0.5"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
+            <rect x="0.5" y="0.5" width="18" height="10" rx="2" stroke={fg} fill="none"/>
+            <rect x="2" y="2" width="15" height="7" rx="1" fill={fg}/>
+            <rect x="19.5" y="3.5" width="2" height="4" rx="0.5" fill={fg}/>
+          </svg>
+        </div>
+      </div>
+      {/* Content */}
+      <div style={{flex: 1, overflow: 'hidden', position: 'relative', display:'flex', flexDirection:'column'}}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Button component
+window.Button = function Button({
+  children, onClick, variant = 'primary', size = 'md',
+  icon, iconRight, full, disabled, style = {},
+}) {
+  const C = window.BR.colors;
+  const sizes = {
+    sm: { h: 36, px: 14, fs: 13, gap: 6, r: 10 },
+    md: { h: 48, px: 20, fs: 15, gap: 8, r: 14 },
+    lg: { h: 56, px: 24, fs: 16, gap: 10, r: 16 },
+    xl: { h: 64, px: 28, fs: 17, gap: 10, r: 18 },
+  };
+  const s = sizes[size];
+  const variants = {
+    primary: { bg: C.primary, color: '#FFF', border: 'none' },
+    dark: { bg: C.ink, color: '#FFF', border: 'none' },
+    forest: { bg: C.forest, color: '#FFF', border: 'none' },
+    outline: { bg: 'transparent', color: C.ink, border: `1.5px solid ${C.line}` },
+    ghost: { bg: 'transparent', color: C.ink, border: 'none' },
+    soft: { bg: C.primarySoft, color: C.primaryDark, border: 'none' },
+    danger: { bg: C.danger, color: '#FFF', border: 'none' },
+  };
+  const v = variants[variant];
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      height: s.h, padding: `0 ${s.px}px`, fontSize: s.fs, gap: s.gap,
+      borderRadius: s.r, background: v.bg, color: v.color, border: v.border,
+      fontFamily: window.BR.font.sans, fontWeight: 600,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+      width: full ? '100%' : 'auto',
+      letterSpacing: -0.1,
+      transition: 'all 0.15s ease', ...style,
+    }}
+    onMouseEnter={e => { if (!disabled) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+    >
+      {icon}{children}{iconRight}
+    </button>
+  );
+};
+
+// Text input
+window.TextField = function TextField({ label, value, onChange, placeholder, type='text', icon, right, hint }) {
+  const C = window.BR.colors;
+  const [focus, setFocus] = React.useState(false);
+  return (
+    <label style={{display:'block', fontFamily: window.BR.font.sans}}>
+      {label && <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>{label}</div>}
+      <div style={{
+        display:'flex', alignItems:'center', gap: 10,
+        height: 52, padding: '0 14px',
+        borderRadius: 14, background: '#FFF',
+        border: `1.5px solid ${focus ? C.primary : C.line}`,
+        transition: 'border-color 0.15s',
+      }}>
+        {icon && <span style={{color: focus ? C.primary : C.inkMute, display:'flex'}}>{icon}</span>}
+        <input
+          type={type} value={value} onChange={onChange} placeholder={placeholder}
+          onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
+          style={{
+            flex:1, border:'none', outline:'none', background:'transparent',
+            fontSize: 15, fontFamily: window.BR.font.sans, color: C.ink,
+          }}
+        />
+        {right}
+      </div>
+      {hint && <div style={{fontSize: 12, color: C.inkMute, marginTop: 6}}>{hint}</div>}
+    </label>
+  );
+};
+
+// Stat tile
+window.Stat = function Stat({ label, value, unit, icon, dark, accent }) {
+  const C = window.BR.colors;
+  return (
+    <div style={{
+      background: dark ? 'rgba(255,255,255,0.06)' : C.white,
+      border: dark ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${C.line}`,
+      borderRadius: 16, padding: '14px 16px',
+    }}>
+      <div style={{display:'flex', alignItems:'center', gap:6, marginBottom: 6}}>
+        {icon && <span style={{color: accent || (dark ? '#B6AA99' : C.inkMute), display:'flex'}}>{icon}</span>}
+        <div style={{fontSize: 11, fontWeight: 600, textTransform:'uppercase',
+          letterSpacing: 0.8, color: dark ? '#B6AA99' : C.inkMute}}>{label}</div>
+      </div>
+      <div style={{display:'flex', alignItems:'baseline', gap: 4}}>
+        <div style={{fontSize: 24, fontFamily: window.BR.font.mono, fontWeight: 500,
+          color: dark ? '#FFF' : C.ink, lineHeight: 1}}>{value}</div>
+        {unit && <div style={{fontSize: 12, color: dark ? '#B6AA99' : C.inkMute,
+          fontFamily: window.BR.font.mono}}>{unit}</div>}
+      </div>
+    </div>
+  );
+};
+
+// Bottom nav
+window.BottomNav = function BottomNav({ active, onChange }) {
+  const C = window.BR.colors;
+  const items = [
+    { id: 'home', icon: 'home', label: 'Início' },
+    { id: 'routes', icon: 'route', label: 'Rotas' },
+    { id: 'record', icon: 'record', label: 'Gravar', center: true },
+    { id: 'stats', icon: 'trending', label: 'Stats' },
+    { id: 'profile', icon: 'user', label: 'Perfil' },
+  ];
+  return (
+    <div style={{
+      height: 84, flexShrink: 0,
+      background: '#FFF',
+      borderTop: `1px solid ${C.line}`,
+      display: 'flex', alignItems: 'flex-start',
+      padding: '8px 4px 0', position: 'relative',
+    }}>
+      {items.map(it => {
+        const isActive = active === it.id;
+        if (it.center) {
+          return (
+            <button key={it.id} onClick={() => onChange(it.id)}
+              style={{
+                flex: 1, background:'none', border:'none', cursor:'pointer',
+                display:'flex', flexDirection:'column', alignItems:'center', gap: 2,
+                paddingTop: 0,
+              }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: C.primary, color: '#FFF',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                boxShadow: '0 6px 18px rgba(232,85,58,0.4)',
+                transform: 'translateY(-16px)',
+              }}>
+                <window.Icon name="record" size={22} color="#FFF"/>
+              </div>
+              <div style={{fontSize: 11, fontWeight: 600, color: C.ink,
+                transform: 'translateY(-12px)', fontFamily: window.BR.font.sans}}>{it.label}</div>
+            </button>
+          );
+        }
+        return (
+          <button key={it.id} onClick={() => onChange(it.id)}
+            style={{
+              flex: 1, background:'none', border:'none', cursor:'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', gap: 4,
+              padding: '4px 0',
+              color: isActive ? C.primary : C.inkMute,
+            }}>
+            <window.Icon name={it.icon} size={22} color={isActive ? C.primary : C.inkMute} stroke={isActive ? 2.2 : 1.8}/>
+            <div style={{fontSize: 11, fontWeight: isActive ? 700 : 500, fontFamily: window.BR.font.sans}}>{it.label}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// Pill / Chip
+window.Pill = function Pill({ children, active, onClick, icon, color }) {
+  const C = window.BR.colors;
+  return (
+    <button onClick={onClick} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '8px 14px', borderRadius: 999,
+      background: active ? (color || C.ink) : C.white,
+      color: active ? '#FFF' : C.ink,
+      border: `1.5px solid ${active ? (color || C.ink) : C.line}`,
+      fontSize: 13, fontWeight: 600, fontFamily: window.BR.font.sans,
+      cursor: 'pointer', whiteSpace: 'nowrap',
+    }}>
+      {icon}{children}
+    </button>
+  );
+};
+
+// Segmented control
+window.Segmented = function Segmented({ options, value, onChange }) {
+  const C = window.BR.colors;
+  return (
+    <div style={{
+      display: 'inline-flex', padding: 4, borderRadius: 12,
+      background: C.bgAlt, border: `1px solid ${C.line}`,
+    }}>
+      {options.map(opt => (
+        <button key={opt.value} onClick={() => onChange(opt.value)}
+          style={{
+            padding: '8px 14px', borderRadius: 9,
+            background: value === opt.value ? '#FFF' : 'transparent',
+            color: value === opt.value ? C.ink : C.inkSoft,
+            border: 'none', cursor: 'pointer',
+            fontSize: 13, fontWeight: 600, fontFamily: window.BR.font.sans,
+            boxShadow: value === opt.value ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+          }}>
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Auth screens: Login, Signup, Forgot password
+window.AuthScreen = function AuthScreen({ onAuth, variant = 'classic' }) {
+  const C = window.BR.colors;
+  const [mode, setMode] = React.useState('login'); // login | signup | forgot
+  const [email, setEmail] = React.useState('maria.silva@email.com');
+  const [password, setPassword] = React.useState('••••••••');
+  const [name, setName] = React.useState('');
+  const [showPass, setShowPass] = React.useState(false);
+
+  // Variant A: "classic" — top image + form bottom
+  // Variant B: "hero" — full green hero with route line
+
+  const Hero = variant === 'classic' ? (
+    <div style={{
+      height: 280, position: 'relative', overflow: 'hidden',
+      background: `linear-gradient(160deg, ${C.forest} 0%, #1F3328 100%)`,
+    }}>
+      {/* Decorative map lines */}
+      <svg viewBox="0 0 400 280" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity: 0.2}}>
+        <path d="M-20 220 Q 80 180 160 200 T 320 150 T 440 180" stroke="#FFF" strokeWidth="2" fill="none"/>
+        <path d="M-20 240 Q 100 210 200 230 T 440 200" stroke="#FFF" strokeWidth="1" fill="none" strokeDasharray="3 5"/>
+        <path d="M-20 180 Q 120 140 220 170 T 440 140" stroke={C.primary} strokeWidth="3" fill="none" opacity="0.7"/>
+        <circle cx="80" cy="170" r="4" fill={C.primary}/>
+        <circle cx="260" cy="155" r="4" fill={C.primary}/>
+        <circle cx="380" cy="148" r="4" fill="#FFF"/>
+      </svg>
+      {/* Contour lines */}
+      <svg viewBox="0 0 400 280" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity: 0.08}}>
+        {[40,80,120,160,200,240].map(y => (
+          <path key={y} d={`M-20 ${y} Q 80 ${y-10} 200 ${y} T 420 ${y-5}`} stroke="#FFF" strokeWidth="1" fill="none"/>
+        ))}
+      </svg>
+      {/* Logo + tagline */}
+      <div style={{position:'absolute', inset:0, padding: '48px 32px 0', display:'flex', flexDirection:'column', justifyContent:'flex-end', paddingBottom: 36}}>
+        <div style={{display:'flex', alignItems:'center', gap: 10, marginBottom: 14}}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 12, background: C.primary,
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <window.Icon name="bike" size={22} color="#FFF"/>
+          </div>
+          <div style={{fontSize: 22, fontWeight: 800, color:'#FFF', letterSpacing: -0.5, fontFamily: window.BR.font.sans}}>
+            BikeRoute
+          </div>
+        </div>
+        <div style={{fontSize: 28, fontWeight: 700, color:'#FFF', lineHeight: 1.1, letterSpacing: -0.8, maxWidth: 280}}>
+          Pedale. Grave.<br/>
+          <span style={{color: C.primary}}>Conquiste.</span>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <div style={{flex:1, display:'flex', flexDirection:'column', overflow:'auto', background: C.bg}}>
+      {Hero}
+      <div style={{padding: '28px 24px 32px', flex:1, display:'flex', flexDirection:'column'}}>
+        {/* Segmented tabs */}
+        {mode !== 'forgot' && (
+          <div style={{display:'flex', gap: 24, marginBottom: 24, borderBottom: `1px solid ${C.line}`}}>
+            {[{id:'login', l:'Entrar'},{id:'signup', l:'Criar conta'}].map(t => (
+              <button key={t.id} onClick={() => setMode(t.id)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '10px 0', fontSize: 15, fontWeight: 700,
+                color: mode === t.id ? C.ink : C.inkMute,
+                borderBottom: `2px solid ${mode === t.id ? C.primary : 'transparent'}`,
+                marginBottom: -1, fontFamily: window.BR.font.sans,
+              }}>{t.l}</button>
+            ))}
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <div style={{marginBottom: 24}}>
+            <button onClick={()=>setMode('login')} style={{
+              background:'none', border:'none', cursor:'pointer', color: C.inkSoft,
+              display:'flex', alignItems:'center', gap: 4, padding: 0, fontSize: 14,
+              fontFamily: window.BR.font.sans, marginBottom: 16,
+            }}>
+              <window.Icon name="chevronLeft" size={18}/> Voltar
+            </button>
+            <div style={{fontSize: 24, fontWeight: 700, letterSpacing: -0.5, color: C.ink}}>Recuperar senha</div>
+            <div style={{fontSize: 14, color: C.inkSoft, marginTop: 6, lineHeight: 1.4}}>
+              Informe seu email e enviaremos um link para redefinir sua senha.
+            </div>
+          </div>
+        )}
+
+        <div style={{display:'flex', flexDirection:'column', gap: 14}}>
+          {mode === 'signup' && (
+            <window.TextField label="Nome completo" value={name} onChange={e=>setName(e.target.value)}
+              placeholder="Seu nome" icon={<window.Icon name="user" size={18}/>}/>
+          )}
+          <window.TextField label="Email" value={email} onChange={e=>setEmail(e.target.value)}
+            placeholder="voce@email.com" type="email" icon={<window.Icon name="mail" size={18}/>}/>
+          {mode !== 'forgot' && (
+            <window.TextField label="Senha" value={password} onChange={e=>setPassword(e.target.value)}
+              placeholder="••••••••" type={showPass ? 'text' : 'password'}
+              icon={<window.Icon name="lock" size={18}/>}
+              right={
+                <button onClick={()=>setShowPass(s=>!s)} style={{background:'none', border:'none', cursor:'pointer', color: C.inkMute, padding: 4}}>
+                  <window.Icon name="eye" size={18}/>
+                </button>
+              }/>
+          )}
+          {mode === 'signup' && (
+            <window.TextField label="Confirmar senha" value={password} onChange={()=>{}}
+              placeholder="••••••••" type="password" icon={<window.Icon name="lock" size={18}/>}/>
+          )}
+        </div>
+
+        {mode === 'login' && (
+          <button onClick={()=>setMode('forgot')} style={{
+            background:'none', border:'none', cursor:'pointer',
+            alignSelf:'flex-end', marginTop: 12, color: C.primaryDark,
+            fontSize: 13, fontWeight: 600, fontFamily: window.BR.font.sans,
+          }}>Esqueci minha senha</button>
+        )}
+
+        <div style={{marginTop: 24}}>
+          <window.Button variant="primary" size="lg" full onClick={onAuth}
+            iconRight={<window.Icon name="arrowRight" size={18} color="#FFF"/>}>
+            {mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Enviar link'}
+          </window.Button>
+        </div>
+
+        {mode !== 'forgot' && (
+          <>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 12, margin: '20px 0',
+              color: C.inkMute, fontSize: 12, fontWeight: 600,
+            }}>
+              <div style={{flex:1, height: 1, background: C.line}}/>
+              <span>ou continue com</span>
+              <div style={{flex:1, height: 1, background: C.line}}/>
+            </div>
+            <div style={{display:'flex', gap: 10}}>
+              <window.Button variant="outline" size="md" full onClick={onAuth}>
+                <span style={{fontWeight: 700}}>G</span>&nbsp;Google
+              </window.Button>
+              <window.Button variant="outline" size="md" full onClick={onAuth}>
+                <span style={{fontWeight: 700}}>f</span>&nbsp;Facebook
+              </window.Button>
+            </div>
+          </>
+        )}
+
+        <div style={{flex:1}}/>
+        <div style={{textAlign: 'center', fontSize: 12, color: C.inkMute, marginTop: 20, lineHeight: 1.5}}>
+          Ao continuar você aceita os <span style={{color: C.ink, fontWeight: 600}}>Termos de Uso</span> e<br/>
+          <span style={{color: C.ink, fontWeight: 600}}>Política de Privacidade</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Variant B — hero dominant
+window.AuthScreenHero = function AuthScreenHero({ onAuth }) {
+  const C = window.BR.colors;
+  const [mode, setMode] = React.useState('login');
+  const [email, setEmail] = React.useState('maria.silva@email.com');
+  const [password, setPassword] = React.useState('••••••••');
+
+  return (
+    <div style={{flex:1, display:'flex', flexDirection:'column', background: C.forest, overflow:'auto', position:'relative'}}>
+      {/* Hero illustration */}
+      <div style={{
+        position: 'absolute', inset: 0, overflow: 'hidden',
+      }}>
+        <svg viewBox="0 0 390 500" preserveAspectRatio="xMidYMid slice"
+          style={{position:'absolute', top:0, left:0, width:'100%', height:500}}>
+          <defs>
+            <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#3A5D4D"/>
+              <stop offset="1" stopColor="#1F3328"/>
+            </linearGradient>
+          </defs>
+          {/* mountain silhouettes */}
+          <path d="M0 340 L60 240 L130 300 L200 200 L280 290 L360 230 L390 270 L390 500 L0 500Z" fill="url(#mt)" opacity="0.6"/>
+          <path d="M0 400 L80 320 L180 380 L260 300 L340 370 L390 340 L390 500 L0 500Z" fill="#162A20" opacity="0.8"/>
+          {/* Route */}
+          <path d="M40 440 Q 120 400 180 420 T 300 380 T 380 360" stroke={C.primary} strokeWidth="3" fill="none" strokeLinecap="round"/>
+          <path d="M40 440 Q 120 400 180 420 T 300 380 T 380 360" stroke={C.primary} strokeWidth="10" fill="none" strokeLinecap="round" opacity="0.2"/>
+          {/* Sun */}
+          <circle cx="310" cy="130" r="36" fill={C.primary} opacity="0.3"/>
+          <circle cx="310" cy="130" r="24" fill={C.primary}/>
+        </svg>
+      </div>
+
+      {/* Content */}
+      <div style={{position:'relative', padding: '60px 28px 28px', color:'#FFF', flex:1, display:'flex', flexDirection:'column'}}>
+        <div style={{display:'flex', alignItems:'center', gap: 10, marginBottom: 8}}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 11, background: C.primary,
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <window.Icon name="bike" size={20} color="#FFF"/>
+          </div>
+          <div style={{fontSize: 20, fontWeight: 800, letterSpacing: -0.4}}>BikeRoute</div>
+        </div>
+
+        <div style={{height: 180}}/>
+
+        <div style={{fontSize: 32, fontWeight: 800, lineHeight: 1.05, letterSpacing: -1, marginBottom: 8}}>
+          Sua trilha<br/>começa aqui.
+        </div>
+        <div style={{fontSize: 14, color:'rgba(255,255,255,0.7)', marginBottom: 28, maxWidth: 280, lineHeight: 1.5}}>
+          Grave rotas, acompanhe elevação e compartilhe conquistas.
+        </div>
+
+        {/* Glass card form */}
+        <div style={{
+          background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 22, padding: 20,
+        }}>
+          <div style={{display:'flex', gap: 8, marginBottom: 16, background:'rgba(0,0,0,0.2)', padding: 3, borderRadius: 10}}>
+            {[{id:'login', l:'Entrar'},{id:'signup', l:'Cadastrar'}].map(t=>(
+              <button key={t.id} onClick={()=>setMode(t.id)} style={{
+                flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                background: mode === t.id ? C.primary : 'transparent',
+                color: '#FFF', fontSize: 13, fontWeight: 700, cursor:'pointer',
+                fontFamily: window.BR.font.sans,
+              }}>{t.l}</button>
+            ))}
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap: 10}}>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 10, height: 48, padding: '0 14px',
+              borderRadius: 12, background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}>
+              <window.Icon name="mail" size={18} color="rgba(255,255,255,0.6)"/>
+              <input value={email} onChange={e=>setEmail(e.target.value)} style={{
+                flex:1, background:'transparent', border:'none', outline:'none',
+                color:'#FFF', fontSize: 14, fontFamily: window.BR.font.sans,
+              }}/>
+            </div>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 10, height: 48, padding: '0 14px',
+              borderRadius: 12, background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}>
+              <window.Icon name="lock" size={18} color="rgba(255,255,255,0.6)"/>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{
+                flex:1, background:'transparent', border:'none', outline:'none',
+                color:'#FFF', fontSize: 14, fontFamily: window.BR.font.sans,
+              }}/>
+            </div>
+          </div>
+          <button onClick={onAuth} style={{
+            width: '100%', marginTop: 16, height: 52, borderRadius: 14,
+            background: C.primary, color:'#FFF', border:'none', cursor:'pointer',
+            fontSize: 15, fontWeight: 700, fontFamily: window.BR.font.sans,
+            display:'flex', alignItems:'center', justifyContent:'center', gap: 8,
+          }}>
+            {mode === 'login' ? 'Entrar' : 'Criar conta'}
+            <window.Icon name="arrowRight" size={18} color="#FFF"/>
+          </button>
+          <div style={{textAlign:'center', marginTop: 12}}>
+            <button style={{
+              background:'none', border:'none', color:'rgba(255,255,255,0.7)', fontSize: 12,
+              cursor:'pointer', fontFamily: window.BR.font.sans,
+            }}>Esqueci minha senha</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Home screen with dashboard
+window.HomeScreen = function HomeScreen({ onNav, onRecord, onOpenRoute, weekGoal, variant = 'a' }) {
+  const C = window.BR.colors;
+
+  // Mock user
+  const user = { name: 'Maria', city: 'São Paulo' };
+  const weeklyStats = {
+    distance: 47.2, goal: weekGoal || 80,
+    rides: 4, time: '3h 42min', elev: 612,
+  };
+
+  const quickActions = [
+    { id: 'record', icon: 'record', label: 'Gravar rota', color: C.primary, onClick: onRecord },
+    { id: 'routes', icon: 'map', label: 'Minhas rotas', color: C.forest, onClick: () => onNav('routes') },
+    { id: 'friends', icon: 'users', label: 'Amigos', color: C.moss, onClick: () => onNav('friends') },
+    { id: 'goals', icon: 'target', label: 'Metas', color: C.sky, onClick: () => onNav('goals') },
+  ];
+
+  const recentRoutes = [
+    { id: 1, name: 'Ibirapuera Loop', date: 'Hoje, 07:12', dist: '18.4 km', time: '54min', type: 'urbano', elev: 142 },
+    { id: 2, name: 'Trilha Cantareira', date: 'Dom, 14 abr', dist: '32.1 km', time: '2h 18min', type: 'trilha', elev: 820 },
+    { id: 3, name: 'Marginal Pinheiros', date: 'Sex, 12 abr', dist: '22.0 km', time: '1h 04min', type: 'estrada', elev: 85 },
+  ];
+
+  const pct = Math.min(100, (weeklyStats.distance / weeklyStats.goal) * 100);
+
+  // Variant A: bold hero with big ring. Variant B: grid-first minimal.
+  return (
+    <div style={{flex:1, overflow:'auto', background: C.bg}}>
+      {/* Header */}
+      <div style={{
+        padding: '18px 22px 14px',
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+      }}>
+        <div style={{display:'flex', alignItems:'center', gap: 12}}>
+          <div style={{
+            width: 42, height: 42, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${C.moss}, ${C.forest})`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            color:'#FFF', fontWeight: 700, fontSize: 16,
+          }}>M</div>
+          <div>
+            <div style={{fontSize: 12, color: C.inkMute, fontWeight: 500}}>Bem-vinda de volta</div>
+            <div style={{fontSize: 16, fontWeight: 700, color: C.ink, letterSpacing: -0.3}}>{user.name} Silva</div>
+          </div>
+        </div>
+        <div style={{display:'flex', gap: 8}}>
+          <button style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: C.white, border: `1px solid ${C.line}`,
+            display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+            position: 'relative',
+          }}>
+            <window.Icon name="notif" size={18} color={C.ink}/>
+            <div style={{
+              position:'absolute', top: 8, right: 10,
+              width: 8, height: 8, borderRadius: '50%', background: C.primary,
+              border: '2px solid #FFF',
+            }}/>
+          </button>
+        </div>
+      </div>
+
+      {variant === 'a' ? (
+        <>
+          {/* Weekly goal hero card */}
+          <div style={{margin: '6px 18px 18px', padding: 20,
+            background: C.forest, borderRadius: 24, color:'#FFF',
+            position:'relative', overflow:'hidden',
+          }}>
+            {/* bg pattern */}
+            <svg viewBox="0 0 300 200" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.1}}>
+              <path d="M-10 160 Q 80 130 160 150 T 320 120" stroke="#FFF" strokeWidth="1.5" fill="none"/>
+              <path d="M-10 180 Q 100 150 180 170 T 320 140" stroke="#FFF" strokeWidth="1" fill="none" strokeDasharray="3 4"/>
+            </svg>
+            <div style={{position:'relative', display:'flex', alignItems:'center', gap: 20}}>
+              {/* Ring */}
+              <div style={{position:'relative', width: 110, height: 110, flexShrink: 0}}>
+                <svg viewBox="0 0 110 110" style={{transform:'rotate(-90deg)'}}>
+                  <circle cx="55" cy="55" r="48" stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="none"/>
+                  <circle cx="55" cy="55" r="48" stroke={C.primary} strokeWidth="8" fill="none"
+                    strokeDasharray={Math.PI*96} strokeDashoffset={Math.PI*96*(1 - pct/100)}
+                    strokeLinecap="round"/>
+                </svg>
+                <div style={{
+                  position:'absolute', inset:0, display:'flex', flexDirection:'column',
+                  alignItems:'center', justifyContent:'center',
+                }}>
+                  <div style={{fontSize: 22, fontWeight: 700, fontFamily: window.BR.font.mono}}>{Math.round(pct)}%</div>
+                  <div style={{fontSize: 10, color:'rgba(255,255,255,0.6)', fontWeight:600, letterSpacing: 0.5}}>META</div>
+                </div>
+              </div>
+              <div style={{flex: 1}}>
+                <div style={{fontSize: 12, color:'rgba(255,255,255,0.65)', fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6, marginBottom: 4}}>
+                  Meta semanal
+                </div>
+                <div style={{fontSize: 20, fontWeight: 700, letterSpacing: -0.4, marginBottom: 8}}>
+                  <span style={{fontFamily: window.BR.font.mono}}>{weeklyStats.distance}</span>
+                  <span style={{color:'rgba(255,255,255,0.5)', fontSize: 16}}> / {weeklyStats.goal} km</span>
+                </div>
+                <div style={{fontSize: 13, color:'rgba(255,255,255,0.8)', lineHeight: 1.4}}>
+                  Faltam <b style={{color:'#FFF'}}>{(weeklyStats.goal - weeklyStats.distance).toFixed(1)} km</b> para sua meta
+                </div>
+              </div>
+            </div>
+            {/* Mini stats row */}
+            <div style={{position:'relative', marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.12)', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 8}}>
+              <div>
+                <div style={{fontSize: 16, fontWeight: 600, fontFamily: window.BR.font.mono}}>{weeklyStats.rides}</div>
+                <div style={{fontSize: 11, color:'rgba(255,255,255,0.6)'}}>Pedaladas</div>
+              </div>
+              <div>
+                <div style={{fontSize: 16, fontWeight: 600, fontFamily: window.BR.font.mono}}>{weeklyStats.time}</div>
+                <div style={{fontSize: 11, color:'rgba(255,255,255,0.6)'}}>Tempo</div>
+              </div>
+              <div>
+                <div style={{fontSize: 16, fontWeight: 600, fontFamily: window.BR.font.mono}}>{weeklyStats.elev}m</div>
+                <div style={{fontSize: 11, color:'rgba(255,255,255,0.6)'}}>Elevação</div>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Variant B — minimal stacked cards */}
+          <div style={{margin: '6px 18px 14px', display:'grid', gridTemplateColumns:'1fr 1fr', gap: 10}}>
+            <div style={{background:'#FFF', borderRadius: 18, padding: 16, border: `1px solid ${C.line}`}}>
+              <div style={{fontSize: 11, color: C.inkMute, fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6}}>Esta semana</div>
+              <div style={{fontSize: 24, fontFamily: window.BR.font.mono, fontWeight: 600, color: C.ink, marginTop: 4}}>{weeklyStats.distance}
+                <span style={{fontSize: 13, color: C.inkMute}}> km</span>
+              </div>
+              <div style={{height: 6, background: C.lineSoft, borderRadius: 3, marginTop: 10, overflow:'hidden'}}>
+                <div style={{width: `${pct}%`, height:'100%', background: C.primary}}/>
+              </div>
+              <div style={{fontSize: 11, color: C.inkMute, marginTop: 6}}>Meta: {weeklyStats.goal} km</div>
+            </div>
+            <div style={{background: C.forest, borderRadius: 18, padding: 16, color:'#FFF'}}>
+              <div style={{fontSize: 11, color:'rgba(255,255,255,0.6)', fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6}}>Ranking</div>
+              <div style={{fontSize: 24, fontFamily: window.BR.font.mono, fontWeight: 600, marginTop: 4}}>#14
+                <span style={{fontSize: 13, color:'rgba(255,255,255,0.6)'}}> /127</span>
+              </div>
+              <div style={{display:'flex', alignItems:'center', gap: 4, fontSize: 11, marginTop: 10, color: C.leaf}}>
+                <window.Icon name="arrowUp" size={12}/> Subiu 3 posições
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Quick actions */}
+      <div style={{padding: '4px 18px 14px'}}>
+        <div style={{fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 10, letterSpacing: -0.2, display:'flex', alignItems:'center', gap: 6}}>
+          Menu rápido
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap: 8}}>
+          {quickActions.map(a => (
+            <button key={a.id} onClick={a.onClick} style={{
+              background: C.white, border: `1px solid ${C.line}`, borderRadius: 16,
+              padding: '14px 8px', cursor:'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', gap: 8,
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 11,
+                background: a.color + '15', color: a.color,
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <window.Icon name={a.icon} size={20} color={a.color}/>
+              </div>
+              <div style={{fontSize: 11, fontWeight: 600, color: C.ink, textAlign:'center', lineHeight: 1.2}}>{a.label}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Weather + tip strip */}
+      <div style={{padding: '0 18px 14px'}}>
+        <div style={{
+          background: '#FFF', border: `1px solid ${C.line}`, borderRadius: 16,
+          padding: '14px 16px', display:'flex', alignItems:'center', gap: 14,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'linear-gradient(135deg, #FCE3B6, #F5A524)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <window.Icon name="sun" size={22} color="#FFF"/>
+          </div>
+          <div style={{flex: 1}}>
+            <div style={{fontSize: 13, fontWeight: 600, color: C.ink}}>Bom dia pra pedalar</div>
+            <div style={{fontSize: 12, color: C.inkSoft, marginTop: 2}}>
+              <b style={{fontFamily: window.BR.font.mono, color: C.ink}}>22°</b> · Ensolarado · Vento leve
+            </div>
+          </div>
+          <div style={{display:'flex', gap: 10, color: C.inkMute, fontSize: 11, fontFamily: window.BR.font.mono}}>
+            <div style={{textAlign:'center'}}>
+              <window.Icon name="wind" size={14}/> 8km/h
+            </div>
+            <div style={{textAlign:'center'}}>
+              <window.Icon name="droplet" size={14}/> 45%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent activity */}
+      <div style={{padding: '4px 18px 20px'}}>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 10}}>
+          <div style={{fontSize: 13, fontWeight: 700, color: C.ink, letterSpacing: -0.2}}>Atividade recente</div>
+          <button onClick={() => onNav('routes')} style={{
+            background:'none', border:'none', cursor:'pointer', fontSize: 12, fontWeight: 600,
+            color: C.primaryDark, display:'flex', alignItems:'center', gap: 2,
+          }}>Ver tudo <window.Icon name="chevronRight" size={14}/></button>
+        </div>
+        <div style={{display:'flex', flexDirection:'column', gap: 8}}>
+          {recentRoutes.map(r => (
+            <button key={r.id} onClick={() => onOpenRoute(r)} style={{
+              background: C.white, border:`1px solid ${C.line}`, borderRadius: 16,
+              padding: 12, cursor:'pointer', display:'flex', alignItems:'center', gap: 12,
+              textAlign:'left',
+            }}>
+              <div style={{
+                width: 60, height: 60, borderRadius: 12, background: C.bgAlt,
+                position:'relative', overflow:'hidden', flexShrink: 0,
+              }}>
+                <svg viewBox="0 0 60 60" style={{width:'100%', height:'100%'}}>
+                  <rect width="60" height="60" fill={C.forestSoft}/>
+                  <path d={r.type === 'trilha' ? "M5 45 Q 15 25 25 35 T 45 20 T 58 30" : r.type === 'estrada' ? "M5 30 L 58 28" : "M5 45 Q 20 30 30 35 T 55 20"}
+                    stroke={C.primary} strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={{fontSize: 14, fontWeight: 700, color: C.ink, letterSpacing: -0.2, marginBottom: 3}}>{r.name}</div>
+                <div style={{fontSize: 11, color: C.inkMute, marginBottom: 6}}>{r.date} · {r.type}</div>
+                <div style={{display:'flex', gap: 10, fontSize: 11, color: C.inkSoft, fontFamily: window.BR.font.mono}}>
+                  <span><b style={{color: C.ink}}>{r.dist}</b></span>
+                  <span>·</span>
+                  <span>{r.time}</span>
+                  <span>·</span>
+                  <span>↑{r.elev}m</span>
+                </div>
+              </div>
+              <window.Icon name="chevronRight" size={16} color={C.inkMute}/>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Recording screen — 4 states: idle, recording, paused, summary
+window.RecordScreen = function RecordScreen({ onBack, onSave }) {
+  const [state, setState] = React.useState('idle'); // idle | recording | paused | summary
+  const [elapsed, setElapsed] = React.useState(0);
+  const [distance, setDistance] = React.useState(0);
+  const C = window.BR.colors;
+
+  React.useEffect(() => {
+    if (state !== 'recording') return;
+    const id = setInterval(() => {
+      setElapsed(e => e + 1);
+      setDistance(d => +(d + 0.005 + Math.random()*0.004).toFixed(2));
+    }, 100);
+    return () => clearInterval(id);
+  }, [state]);
+
+  const fmt = s => {
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  };
+
+  const speed = state === 'recording' ? (18 + Math.sin(elapsed/10)*3).toFixed(1) : distance > 0 ? (distance / (elapsed/3600)).toFixed(1) : '0.0';
+  const calories = Math.round(distance * 38);
+  const elev = Math.round(distance * 14);
+  const progress = Math.min(1, distance / 10);
+
+  const reset = () => { setState('idle'); setElapsed(0); setDistance(0); };
+
+  if (state === 'summary') {
+    return <SummaryView distance={distance} time={fmt(elapsed)} elev={elev} cal={calories} speed={speed} onDiscard={reset} onSave={() => { onSave(); reset(); }}/>;
+  }
+
+  return (
+    <div style={{flex:1, display:'flex', flexDirection:'column', background: C.bg, position:'relative'}}>
+      {/* Top bar */}
+      <div style={{
+        padding: '12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between',
+        background: C.bg, zIndex: 10,
+      }}>
+        <button onClick={onBack} style={{
+          width: 40, height: 40, borderRadius: 12, border: `1px solid ${C.line}`,
+          background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+        }}>
+          <window.Icon name="chevronLeft" size={20} color={C.ink}/>
+        </button>
+        <div style={{fontSize: 15, fontWeight: 700, color: C.ink, letterSpacing: -0.3}}>
+          {state === 'idle' ? 'Nova rota' : state === 'paused' ? 'Pausada' : 'Gravando'}
+        </div>
+        <button style={{
+          width: 40, height: 40, borderRadius: 12, border: `1px solid ${C.line}`,
+          background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+        }}>
+          <window.Icon name="more" size={20} color={C.ink}/>
+        </button>
+      </div>
+
+      {/* Map */}
+      <div style={{position:'relative', flex: 1, overflow:'hidden'}}>
+        <window.MapView height="100%" progress={state === 'idle' ? 0.1 : progress} showMarkers={state !== 'idle'}/>
+
+        {/* Recording indicator badge */}
+        {state === 'recording' && (
+          <div style={{
+            position:'absolute', top: 12, left: 12,
+            display:'flex', alignItems:'center', gap: 8,
+            background: C.ink, color:'#FFF', padding: '8px 12px',
+            borderRadius: 999, fontSize: 12, fontWeight: 700,
+          }}>
+            <div style={{width: 8, height: 8, borderRadius: '50%', background: C.primary,
+              animation:'pulse 1.2s ease-in-out infinite'}}/>
+            GRAVANDO · {fmt(elapsed)}
+          </div>
+        )}
+        {state === 'paused' && (
+          <div style={{
+            position:'absolute', top: 12, left: 12,
+            display:'flex', alignItems:'center', gap: 8,
+            background: C.warn, color:'#FFF', padding: '8px 12px',
+            borderRadius: 999, fontSize: 12, fontWeight: 700,
+          }}>
+            <window.Icon name="pause" size={12} color="#FFF"/>
+            PAUSADA · {fmt(elapsed)}
+          </div>
+        )}
+
+        {/* GPS signal */}
+        <div style={{
+          position:'absolute', top: 12, right: 58,
+          background: '#FFF', border: `1px solid ${C.line}`,
+          padding: '6px 10px', borderRadius: 999,
+          display:'flex', alignItems:'center', gap: 6,
+          fontSize: 11, fontWeight: 600, color: C.ink,
+          fontFamily: window.BR.font.mono,
+        }}>
+          <div style={{width: 6, height: 6, borderRadius:'50%', background: C.success}}/>
+          GPS
+        </div>
+
+        {/* Start button overlay for idle */}
+        {state === 'idle' && (
+          <div style={{
+            position:'absolute', left: '50%', top: '50%',
+            transform:'translate(-50%, -50%)',
+            display:'flex', flexDirection:'column', alignItems:'center', gap: 16,
+          }}>
+            <button onClick={() => setState('recording')} style={{
+              width: 128, height: 128, borderRadius: '50%',
+              background: C.primary, color:'#FFF', border: '6px solid rgba(255,255,255,0.9)',
+              cursor:'pointer', boxShadow: '0 20px 40px rgba(232,85,58,0.4), 0 0 0 12px rgba(232,85,58,0.15)',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+              gap: 2, fontFamily: window.BR.font.sans,
+            }}>
+              <window.Icon name="play" size={36} color="#FFF"/>
+              <div style={{fontSize: 13, fontWeight: 800, letterSpacing: 1}}>INICIAR</div>
+            </button>
+            <div style={{
+              background: 'rgba(31,27,22,0.85)', color: '#FFF', padding: '8px 14px',
+              borderRadius: 999, fontSize: 12, fontWeight: 600,
+            }}>Toque para começar a gravar</div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom sheet */}
+      <div style={{
+        background: '#FFF', borderRadius: '24px 24px 0 0',
+        padding: '16px 18px 20px',
+        boxShadow: '0 -8px 24px rgba(0,0,0,0.06)',
+        position: 'relative', zIndex: 20,
+      }}>
+        <div style={{width: 40, height: 4, borderRadius: 2, background: C.line, margin: '0 auto 16px'}}/>
+
+        {state === 'idle' ? (
+          <>
+            <div style={{fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 10, letterSpacing: -0.2}}>
+              Tipo de atividade
+            </div>
+            <div style={{display:'flex', gap: 8, marginBottom: 16}}>
+              {[
+                {id:'urbano', l:'Urbano', icon:'map'},
+                {id:'trilha', l:'Trilha', icon:'mountain'},
+                {id:'estrada', l:'Estrada', icon:'route'},
+              ].map((t, i) => (
+                <button key={t.id} style={{
+                  flex: 1, padding: '12px 8px', borderRadius: 14,
+                  background: i === 0 ? C.forestSoft : '#FFF',
+                  border: `1.5px solid ${i === 0 ? C.forest : C.line}`,
+                  cursor: 'pointer',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap: 4,
+                  color: i === 0 ? C.forest : C.inkSoft,
+                }}>
+                  <window.Icon name={t.icon} size={18} color={i === 0 ? C.forest : C.inkSoft}/>
+                  <div style={{fontSize: 12, fontWeight: 600}}>{t.l}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 10,
+              padding: '10px 12px', background: C.bgAlt, borderRadius: 12,
+            }}>
+              <window.Icon name="target" size={16} color={C.forest}/>
+              <div style={{flex: 1, fontSize: 12, color: C.inkSoft}}>
+                Meta de hoje: <b style={{color: C.ink}}>15 km</b>
+              </div>
+              <button style={{background:'none', border:'none', color: C.primaryDark, fontSize: 12, fontWeight: 600, cursor:'pointer'}}>Editar</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Live stats */}
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 8, marginBottom: 12}}>
+              <div style={{textAlign:'left'}}>
+                <div style={{fontSize: 10, fontWeight: 700, color: C.inkMute, textTransform:'uppercase', letterSpacing: 0.8}}>Distância</div>
+                <div style={{fontSize: 34, fontFamily: window.BR.font.mono, fontWeight: 500, color: C.ink, letterSpacing: -0.5, lineHeight: 1}}>
+                  {distance.toFixed(2)}
+                  <span style={{fontSize: 15, color: C.inkMute, fontWeight: 500}}> km</span>
+                </div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize: 10, fontWeight: 700, color: C.inkMute, textTransform:'uppercase', letterSpacing: 0.8}}>Tempo</div>
+                <div style={{fontSize: 34, fontFamily: window.BR.font.mono, fontWeight: 500, color: C.ink, letterSpacing: -0.5, lineHeight: 1}}>
+                  {fmt(elapsed)}
+                </div>
+              </div>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 6, marginBottom: 16,
+              paddingTop: 12, borderTop: `1px solid ${C.lineSoft}`}}>
+              <div>
+                <div style={{fontSize: 10, color: C.inkMute, fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6}}>Veloc.</div>
+                <div style={{fontSize: 16, fontFamily: window.BR.font.mono, color: C.ink, fontWeight: 500}}>
+                  {speed}<span style={{fontSize: 10, color: C.inkMute}}> km/h</span>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize: 10, color: C.inkMute, fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6}}>Elevação</div>
+                <div style={{fontSize: 16, fontFamily: window.BR.font.mono, color: C.ink, fontWeight: 500}}>
+                  {elev}<span style={{fontSize: 10, color: C.inkMute}}>m</span>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize: 10, color: C.inkMute, fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6}}>Kcal</div>
+                <div style={{fontSize: 16, fontFamily: window.BR.font.mono, color: C.ink, fontWeight: 500}}>
+                  {calories}
+                </div>
+              </div>
+            </div>
+            <div style={{display:'flex', gap: 10, alignItems:'center'}}>
+              {state === 'recording' ? (
+                <>
+                  <button onClick={() => setState('paused')} style={{
+                    flex: 1, height: 56, borderRadius: 16, background: C.warn,
+                    color:'#FFF', border:'none', cursor:'pointer',
+                    fontSize: 15, fontWeight: 700, fontFamily: window.BR.font.sans,
+                    display:'flex', alignItems:'center', justifyContent:'center', gap: 8,
+                  }}>
+                    <window.Icon name="pause" size={18} color="#FFF"/> Pausar
+                  </button>
+                  <button style={{
+                    width: 56, height: 56, borderRadius: 16, background: C.bgAlt,
+                    border:`1px solid ${C.line}`, cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    <window.Icon name="camera" size={20} color={C.ink}/>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setState('recording')} style={{
+                    flex: 1, height: 56, borderRadius: 16, background: C.success,
+                    color:'#FFF', border:'none', cursor:'pointer',
+                    fontSize: 15, fontWeight: 700, fontFamily: window.BR.font.sans,
+                    display:'flex', alignItems:'center', justifyContent:'center', gap: 8,
+                  }}>
+                    <window.Icon name="play" size={18} color="#FFF"/> Continuar
+                  </button>
+                  <button onClick={() => setState('summary')} style={{
+                    width: 56, height: 56, borderRadius: 16, background: C.danger,
+                    border:'none', cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    <window.Icon name="stop" size={18} color="#FFF"/>
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <style>{`@keyframes pulse { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:0.4; transform: scale(0.8); } }`}</style>
+    </div>
+  );
+};
+
+function SummaryView({ distance, time, elev, cal, speed, onDiscard, onSave }) {
+  const C = window.BR.colors;
+  const [name, setName] = React.useState('Rota matinal · Ibirapuera');
+
+  return (
+    <div style={{flex:1, display:'flex', flexDirection:'column', background: C.bg, overflow:'auto'}}>
+      {/* Header with celebration */}
+      <div style={{
+        background: `linear-gradient(160deg, ${C.forest}, #1F3328)`,
+        padding: '20px 22px 28px', color:'#FFF', position:'relative', overflow:'hidden',
+      }}>
+        <svg viewBox="0 0 390 180" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.15}}>
+          <path d="M-20 120 Q 80 80 180 100 T 420 70" stroke="#FFF" strokeWidth="2" fill="none"/>
+          <path d="M-20 140 Q 100 110 200 130 T 420 100" stroke="#FFF" strokeWidth="1" fill="none"/>
+        </svg>
+        <div style={{position:'relative'}}>
+          <div style={{display:'flex', alignItems:'center', gap: 6, fontSize: 12, color: C.leaf, fontWeight: 700, letterSpacing: 0.8, marginBottom: 8}}>
+            <window.Icon name="check" size={14} color={C.leaf}/> ROTA FINALIZADA
+          </div>
+          <div style={{fontSize: 30, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.05, marginBottom: 4}}>Boa pedalada!</div>
+          <div style={{fontSize: 14, color:'rgba(255,255,255,0.7)'}}>
+            Você completou <b style={{color:'#FFF', fontFamily: window.BR.font.mono}}>{distance.toFixed(2)} km</b> em {time}
+          </div>
+        </div>
+      </div>
+
+      {/* Map preview */}
+      <div style={{margin: '-20px 18px 14px', background:'#FFF', borderRadius: 18,
+        overflow:'hidden', border: `1px solid ${C.line}`, boxShadow: window.BR.shadow.sm}}>
+        <window.MapView height={160}/>
+      </div>
+
+      {/* Name field */}
+      <div style={{padding: '0 18px 14px'}}>
+        <window.TextField label="Nome da rota" value={name} onChange={e=>setName(e.target.value)}
+          icon={<window.Icon name="edit" size={18}/>}/>
+      </div>
+
+      {/* Stats grid */}
+      <div style={{padding: '0 18px 14px', display:'grid', gridTemplateColumns:'1fr 1fr', gap: 8}}>
+        <window.Stat label="Distância" value={distance.toFixed(2)} unit="km" icon={<window.Icon name="route" size={14}/>} accent={C.forest}/>
+        <window.Stat label="Tempo" value={time} icon={<window.Icon name="clock" size={14}/>}/>
+        <window.Stat label="Vel. méd." value={speed} unit="km/h" icon={<window.Icon name="speed" size={14}/>}/>
+        <window.Stat label="Elevação" value={elev} unit="m" icon={<window.Icon name="mountain" size={14}/>}/>
+        <window.Stat label="Calorias" value={cal} unit="kcal" icon={<window.Icon name="flame" size={14}/>}/>
+        <window.Stat label="Ritmo" value="3:12" unit="/km" icon={<window.Icon name="trending" size={14}/>}/>
+      </div>
+
+      {/* Elevation */}
+      <div style={{margin: '0 18px 14px', background:'#FFF', border:`1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px'}}>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 8}}>
+          <div style={{fontSize: 12, fontWeight: 700, color: C.ink, textTransform:'uppercase', letterSpacing: 0.5}}>Elevação</div>
+          <div style={{fontSize: 11, color: C.inkMute, fontFamily: window.BR.font.mono}}>↑{elev}m · ↓{Math.round(elev*0.9)}m</div>
+        </div>
+        <window.ElevationChart height={64}/>
+      </div>
+
+      {/* Actions */}
+      <div style={{padding: '4px 18px 20px', display:'flex', flexDirection:'column', gap: 10}}>
+        <window.Button variant="primary" size="lg" full onClick={onSave}
+          iconRight={<window.Icon name="check" size={18} color="#FFF"/>}>
+          Salvar rota
+        </window.Button>
+        <div style={{display:'flex', gap: 10}}>
+          <window.Button variant="outline" size="md" full icon={<window.Icon name="share" size={16}/>}>
+            Compartilhar
+          </window.Button>
+          <window.Button variant="ghost" size="md" full onClick={onDiscard}
+            style={{color: C.danger}}>
+            Descartar
+          </window.Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Routes list + detail + edit screens
+const useSt2 = React.useState;
+
+const MOCK_ROUTES = [
+  { id: 1, name: 'Ibirapuera Loop', date: 'Hoje, 07:12', dist: 18.4, time: '54min', type: 'urbano', elev: 142, speed: 20.4, cal: 699, difficulty: 'easy', privacy: 'public', notes: 'Volta matinal tranquila pelo parque.', cover: 'forest' },
+  { id: 2, name: 'Trilha Cantareira', date: 'Dom, 14 abr', dist: 32.1, time: '2h 18min', type: 'trilha', elev: 820, speed: 13.9, cal: 1250, difficulty: 'hard', privacy: 'public', notes: 'Subida pesada, descida técnica. Levar bastante água.', cover: 'mountain' },
+  { id: 3, name: 'Marginal Pinheiros', date: 'Sex, 12 abr', dist: 22.0, time: '1h 04min', type: 'estrada', elev: 85, speed: 20.6, cal: 820, difficulty: 'medium', privacy: 'public', notes: 'Ciclovia rápida, ótimo para treino.', cover: 'road' },
+  { id: 4, name: 'Volta da USP', date: 'Qua, 10 abr', dist: 14.2, time: '42min', type: 'urbano', elev: 95, speed: 20.3, cal: 540, difficulty: 'easy', privacy: 'private', notes: '', cover: 'forest' },
+  { id: 5, name: 'Pico do Jaraguá', date: 'Dom, 7 abr', dist: 28.8, time: '2h 05min', type: 'trilha', elev: 680, speed: 13.8, cal: 1120, difficulty: 'hard', privacy: 'public', notes: 'Subida técnica até o pico.', cover: 'mountain' },
+];
+
+window.RoutesListScreen = function RoutesListScreen({ onOpen, onRecord }) {
+  const C = window.BR.colors;
+  const [filter, setFilter] = useSt2('all');
+  const [sort, setSort] = useSt2('recent');
+
+  const filtered = MOCK_ROUTES.filter(r => filter === 'all' || r.type === filter);
+
+  return (
+    <div style={{flex: 1, overflow: 'auto', background: C.bg}}>
+      {/* Header */}
+      <div style={{padding: '18px 22px 8px'}}>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 12}}>
+          <div>
+            <div style={{fontSize: 24, fontWeight: 800, color: C.ink, letterSpacing: -0.8}}>Minhas rotas</div>
+            <div style={{fontSize: 13, color: C.inkMute, marginTop: 2}}>{MOCK_ROUTES.length} rotas · 115.5 km no total</div>
+          </div>
+          <button style={{
+            width: 40, height: 40, borderRadius: 12, border:`1px solid ${C.line}`,
+            background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <window.Icon name="search" size={18} color={C.ink}/>
+          </button>
+        </div>
+
+        {/* Filter chips */}
+        <div style={{display:'flex', gap: 8, overflowX:'auto', paddingBottom: 4, margin: '0 -22px', padding: '0 22px 4px'}}>
+          {[
+            {id: 'all', l: 'Todas', n: MOCK_ROUTES.length},
+            {id: 'urbano', l: 'Urbano', n: MOCK_ROUTES.filter(r=>r.type==='urbano').length},
+            {id: 'trilha', l: 'Trilha', n: MOCK_ROUTES.filter(r=>r.type==='trilha').length},
+            {id: 'estrada', l: 'Estrada', n: MOCK_ROUTES.filter(r=>r.type==='estrada').length},
+          ].map(f => (
+            <window.Pill key={f.id} active={filter===f.id} onClick={()=>setFilter(f.id)}>
+              {f.l} <span style={{opacity: 0.6, fontWeight: 500}}>({f.n})</span>
+            </window.Pill>
+          ))}
+        </div>
+      </div>
+
+      {/* Sort bar */}
+      <div style={{padding:'8px 22px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <window.Segmented
+          options={[{value:'recent', label:'Recentes'}, {value:'longest', label:'Mais longas'}, {value:'fastest', label:'Rápidas'}]}
+          value={sort} onChange={setSort}
+        />
+      </div>
+
+      {/* List */}
+      <div style={{padding: '4px 18px 20px', display:'flex', flexDirection:'column', gap: 10}}>
+        {filtered.map(r => <RouteCard key={r.id} route={r} onClick={() => onOpen(r)}/>)}
+        {filtered.length === 0 && (
+          <div style={{textAlign:'center', padding: '40px 20px', color: C.inkMute}}>
+            Nenhuma rota neste filtro
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+function RouteCard({ route, onClick }) {
+  const C = window.BR.colors;
+  const typeColor = route.type === 'trilha' ? C.forest : route.type === 'estrada' ? C.sky : C.moss;
+  return (
+    <button onClick={onClick} style={{
+      background: '#FFF', border: `1px solid ${C.line}`, borderRadius: 18,
+      padding: 14, cursor:'pointer', textAlign:'left',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{display:'flex', alignItems:'flex-start', gap: 12}}>
+        <div style={{
+          width: 72, height: 72, borderRadius: 14, background: C.forestSoft,
+          position:'relative', overflow:'hidden', flexShrink: 0,
+        }}>
+          <svg viewBox="0 0 72 72" style={{width:'100%', height:'100%'}}>
+            <rect width="72" height="72" fill={route.cover === 'mountain' ? '#D4DECA' : route.cover === 'road' ? '#E0E6EC' : C.forestSoft}/>
+            {/* mini terrain */}
+            {route.cover === 'mountain' && <>
+              <path d="M0 55 L 20 35 L 35 48 L 50 30 L 72 45 L 72 72 L 0 72Z" fill={C.moss} opacity="0.5"/>
+              <path d="M0 62 L 25 48 L 45 58 L 72 55 L 72 72 L 0 72Z" fill={C.forest} opacity="0.4"/>
+            </>}
+            {route.cover === 'road' && <>
+              <rect y="35" width="72" height="6" fill={C.inkMute} opacity="0.3"/>
+              <rect y="45" width="72" height="6" fill={C.inkMute} opacity="0.2"/>
+            </>}
+            <path d={route.type === 'trilha' ? "M5 55 Q 20 30 35 40 T 65 20" : route.type === 'estrada' ? "M5 38 L 65 35" : "M5 55 Q 25 35 38 42 T 65 25"}
+              stroke={C.primary} strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+            <circle cx="5" cy={route.type === 'trilha' ? 55 : route.type === 'estrada' ? 38 : 55} r="2.5" fill="#FFF" stroke={C.primary} strokeWidth="1.5"/>
+          </svg>
+        </div>
+        <div style={{flex: 1, minWidth: 0}}>
+          <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap: 8}}>
+            <div style={{fontSize: 15, fontWeight: 700, color: C.ink, letterSpacing: -0.3, lineHeight: 1.2}}>{route.name}</div>
+            {route.privacy === 'private' && (
+              <div style={{color: C.inkMute, flexShrink: 0, paddingTop: 2}}>
+                <window.Icon name="lock2" size={14}/>
+              </div>
+            )}
+          </div>
+          <div style={{fontSize: 11, color: C.inkMute, marginTop: 3, display:'flex', alignItems:'center', gap: 6}}>
+            <span>{route.date}</span>
+            <span>·</span>
+            <span style={{color: typeColor, fontWeight: 600, textTransform:'capitalize'}}>{route.type}</span>
+          </div>
+          <div style={{display:'flex', gap: 10, marginTop: 8, fontSize: 11, color: C.inkSoft, fontFamily: window.BR.font.mono}}>
+            <div><b style={{color: C.ink}}>{route.dist}</b> km</div>
+            <div style={{color: C.lineSoft}}>|</div>
+            <div>{route.time}</div>
+            <div style={{color: C.lineSoft}}>|</div>
+            <div>↑{route.elev}m</div>
+          </div>
+        </div>
+      </div>
+      {/* Mini elevation */}
+      <div style={{marginTop: -4}}>
+        <window.ElevationChart height={32} color={typeColor}/>
+      </div>
+    </button>
+  );
+}
+
+// Route detail screen
+window.RouteDetailScreen = function RouteDetailScreen({ route, onBack, onEdit, onShare }) {
+  const C = window.BR.colors;
+  if (!route) return null;
+
+  return (
+    <div style={{flex: 1, overflow:'auto', background: C.bg}}>
+      {/* Hero map */}
+      <div style={{position:'relative'}}>
+        <window.MapView height={280}/>
+        <button onClick={onBack} style={{
+          position:'absolute', top: 14, left: 14,
+          width: 40, height: 40, borderRadius: 12, background:'#FFF',
+          border:`1px solid ${C.line}`, cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          boxShadow: window.BR.shadow.sm,
+        }}>
+          <window.Icon name="chevronLeft" size={20} color={C.ink}/>
+        </button>
+        <div style={{position:'absolute', top: 14, right: 14, display:'flex', gap: 8}}>
+          <button onClick={onShare} style={{
+            width: 40, height: 40, borderRadius: 12, background:'#FFF',
+            border:`1px solid ${C.line}`, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow: window.BR.shadow.sm,
+          }}>
+            <window.Icon name="share" size={18} color={C.ink}/>
+          </button>
+          <button onClick={onEdit} style={{
+            width: 40, height: 40, borderRadius: 12, background: C.ink,
+            border:'none', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow: window.BR.shadow.sm,
+          }}>
+            <window.Icon name="edit" size={18} color="#FFF"/>
+          </button>
+        </div>
+      </div>
+
+      {/* Title sheet */}
+      <div style={{
+        background: C.bg, borderRadius: '28px 28px 0 0',
+        marginTop: -20, padding: '20px 22px 16px', position:'relative',
+      }}>
+        <div style={{display:'flex', alignItems:'center', gap: 8, fontSize: 11, color: C.inkMute, fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.8, marginBottom: 6}}>
+          <span style={{color: C.primary}}>●</span> {route.type}
+          <span>·</span>
+          {route.date}
+        </div>
+        <div style={{fontSize: 24, fontWeight: 800, color: C.ink, letterSpacing: -0.6, lineHeight: 1.1}}>{route.name}</div>
+        {route.notes && (
+          <div style={{fontSize: 13, color: C.inkSoft, marginTop: 8, lineHeight: 1.5}}>{route.notes}</div>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div style={{padding: '0 18px 14px', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 8}}>
+        <window.Stat label="Distância" value={route.dist} unit="km" icon={<window.Icon name="route" size={13}/>}/>
+        <window.Stat label="Tempo" value={route.time} icon={<window.Icon name="clock" size={13}/>}/>
+        <window.Stat label="Elevação" value={route.elev} unit="m" icon={<window.Icon name="mountain" size={13}/>}/>
+        <window.Stat label="Vel. méd." value={route.speed} unit="km/h" icon={<window.Icon name="speed" size={13}/>}/>
+        <window.Stat label="Kcal" value={route.cal} icon={<window.Icon name="flame" size={13}/>}/>
+        <window.Stat label="Nível" value={route.difficulty === 'easy' ? 'Fácil' : route.difficulty === 'medium' ? 'Médio' : 'Difícil'} icon={<window.Icon name="target" size={13}/>}/>
+      </div>
+
+      {/* Elevation */}
+      <div style={{margin: '0 18px 14px', background:'#FFF', border:`1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px'}}>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 10}}>
+          <div style={{fontSize: 12, fontWeight: 700, color: C.ink, textTransform:'uppercase', letterSpacing: 0.5}}>Perfil de elevação</div>
+          <div style={{fontSize: 11, color: C.inkMute, fontFamily: window.BR.font.mono}}>máx 318m</div>
+        </div>
+        <window.ElevationChart height={72}/>
+        <div style={{display:'flex', justifyContent:'space-between', fontSize: 10, color: C.inkMute, marginTop: 4, fontFamily: window.BR.font.mono}}>
+          <span>0 km</span><span>{(route.dist/2).toFixed(1)} km</span><span>{route.dist} km</span>
+        </div>
+      </div>
+
+      {/* Action row */}
+      <div style={{padding: '0 18px 24px', display:'flex', gap: 8}}>
+        <window.Button variant="forest" size="md" full icon={<window.Icon name="play" size={16} color="#FFF"/>}>
+          Refazer rota
+        </window.Button>
+        <window.Button variant="outline" size="md" icon={<window.Icon name="download" size={16}/>}/>
+        <window.Button variant="outline" size="md" icon={<window.Icon name="heart" size={16}/>}/>
+      </div>
+    </div>
+  );
+};
+
+// Edit route screen
+window.EditRouteScreen = function EditRouteScreen({ route, onBack, onSave }) {
+  const C = window.BR.colors;
+  const [name, setName] = useSt2(route?.name || '');
+  const [notes, setNotes] = useSt2(route?.notes || '');
+  const [type, setType] = useSt2(route?.type || 'urbano');
+  const [difficulty, setDifficulty] = useSt2(route?.difficulty || 'easy');
+  const [privacy, setPrivacy] = useSt2(route?.privacy || 'public');
+
+  if (!route) return null;
+
+  return (
+    <div style={{flex: 1, display:'flex', flexDirection:'column', background: C.bg, overflow:'hidden'}}>
+      {/* App bar */}
+      <div style={{
+        padding: '12px 16px', display:'flex', alignItems:'center', gap: 8,
+        background: C.bg, borderBottom: `1px solid ${C.lineSoft}`,
+      }}>
+        <button onClick={onBack} style={{
+          width: 40, height: 40, borderRadius: 12, border: `1px solid ${C.line}`,
+          background:'#FFF', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+        }}>
+          <window.Icon name="x" size={18} color={C.ink}/>
+        </button>
+        <div style={{flex: 1, fontSize: 16, fontWeight: 700, color: C.ink, letterSpacing: -0.3}}>Editar rota</div>
+        <window.Button variant="primary" size="sm" onClick={onSave}>Salvar</window.Button>
+      </div>
+
+      <div style={{flex: 1, overflow:'auto', padding: '16px 18px 20px'}}>
+        {/* Cover photo */}
+        <div style={{marginBottom: 16}}>
+          <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>Foto de capa</div>
+          <div style={{
+            height: 140, borderRadius: 16, background: C.forestSoft,
+            position:'relative', overflow:'hidden',
+            border: `1px solid ${C.line}`,
+          }}>
+            <window.MapView height={140} interactive={false}/>
+            <button style={{
+              position:'absolute', bottom: 10, right: 10,
+              padding: '8px 12px', borderRadius: 10, background:'rgba(31,27,22,0.85)',
+              color:'#FFF', border:'none', cursor:'pointer',
+              display:'flex', alignItems:'center', gap: 6, fontSize: 12, fontWeight: 600,
+            }}>
+              <window.Icon name="camera" size={14} color="#FFF"/> Alterar
+            </button>
+          </div>
+        </div>
+
+        {/* Name */}
+        <div style={{marginBottom: 14}}>
+          <window.TextField label="Nome da rota" value={name} onChange={e=>setName(e.target.value)}/>
+        </div>
+
+        {/* Notes */}
+        <div style={{marginBottom: 16}}>
+          <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>Descrição</div>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)}
+            placeholder="Adicione notas sobre esta rota..."
+            style={{
+              width: '100%', minHeight: 88, padding: '12px 14px',
+              borderRadius: 14, background:'#FFF',
+              border: `1.5px solid ${C.line}`, outline:'none',
+              fontSize: 14, fontFamily: window.BR.font.sans, color: C.ink,
+              resize: 'vertical', boxSizing:'border-box',
+            }}/>
+        </div>
+
+        {/* Type */}
+        <div style={{marginBottom: 16}}>
+          <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>Tipo de atividade</div>
+          <div style={{display:'flex', gap: 8}}>
+            {[
+              {id:'urbano', l:'Urbano', icon:'map'},
+              {id:'trilha', l:'Trilha', icon:'mountain'},
+              {id:'estrada', l:'Estrada', icon:'route'},
+            ].map(t => (
+              <button key={t.id} onClick={()=>setType(t.id)} style={{
+                flex: 1, padding: '12px 8px', borderRadius: 14,
+                background: type === t.id ? C.forestSoft : '#FFF',
+                border: `1.5px solid ${type === t.id ? C.forest : C.line}`,
+                cursor: 'pointer',
+                display:'flex', flexDirection:'column', alignItems:'center', gap: 4,
+                color: type === t.id ? C.forest : C.inkSoft,
+              }}>
+                <window.Icon name={t.icon} size={18} color={type === t.id ? C.forest : C.inkSoft}/>
+                <div style={{fontSize: 12, fontWeight: 600}}>{t.l}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Difficulty */}
+        <div style={{marginBottom: 16}}>
+          <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>Nível de dificuldade</div>
+          <div style={{display:'flex', gap: 6}}>
+            {[
+              {id:'easy', l:'Fácil', c: C.success},
+              {id:'medium', l:'Médio', c: C.warn},
+              {id:'hard', l:'Difícil', c: C.danger},
+            ].map(d => (
+              <button key={d.id} onClick={()=>setDifficulty(d.id)} style={{
+                flex: 1, padding: '10px 8px', borderRadius: 12,
+                background: difficulty === d.id ? d.c : '#FFF',
+                border: `1.5px solid ${difficulty === d.id ? d.c : C.line}`,
+                cursor: 'pointer',
+                color: difficulty === d.id ? '#FFF' : C.inkSoft,
+                fontSize: 12, fontWeight: 600,
+                display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+              }}>
+                <div style={{width: 8, height: 8, borderRadius:'50%', background: difficulty === d.id ? '#FFF' : d.c}}/>
+                {d.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Privacy */}
+        <div style={{marginBottom: 16}}>
+          <div style={{fontSize: 13, fontWeight: 600, color: C.inkSoft, marginBottom: 8}}>Privacidade</div>
+          <div style={{display:'flex', flexDirection:'column', gap: 8}}>
+            {[
+              {id:'public', icon:'globe', l:'Pública', d:'Qualquer pessoa pode ver'},
+              {id:'private', icon:'lock2', l:'Privada', d:'Apenas você'},
+            ].map(p => (
+              <button key={p.id} onClick={()=>setPrivacy(p.id)} style={{
+                background:'#FFF', border: `1.5px solid ${privacy === p.id ? C.forest : C.line}`,
+                borderRadius: 14, padding: '12px 14px', cursor:'pointer',
+                display:'flex', alignItems:'center', gap: 12, textAlign:'left',
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: privacy === p.id ? C.forestSoft : C.bgAlt,
+                  color: privacy === p.id ? C.forest : C.inkSoft,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  <window.Icon name={p.icon} size={16} color={privacy === p.id ? C.forest : C.inkSoft}/>
+                </div>
+                <div style={{flex: 1}}>
+                  <div style={{fontSize: 14, fontWeight: 600, color: C.ink}}>{p.l}</div>
+                  <div style={{fontSize: 12, color: C.inkMute}}>{p.d}</div>
+                </div>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  border: `2px solid ${privacy === p.id ? C.forest : C.line}`,
+                  background: privacy === p.id ? C.forest : 'transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {privacy === p.id && <window.Icon name="check" size={12} color="#FFF" stroke={3}/>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Danger zone */}
+        <button style={{
+          width: '100%', padding: 14, borderRadius: 14,
+          background:'transparent', border:`1.5px solid ${C.line}`,
+          color: C.danger, fontSize: 14, fontWeight: 600,
+          display:'flex', alignItems:'center', justifyContent:'center', gap: 8,
+          fontFamily: window.BR.font.sans, cursor:'pointer',
+        }}>
+          <window.Icon name="trash" size={16} color={C.danger}/> Excluir rota
+        </button>
+      </div>
+    </div>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+// Stats / Profile / Friends screens — simpler secondary screens
+const useSt3 = React.useState;
+
+window.StatsScreen = function StatsScreen() {
+  const C = window.BR.colors;
+  const [period, setPeriod] = useSt3('week');
+  const bars = [
+    { d: 'Seg', v: 12 }, { d: 'Ter', v: 0 }, { d: 'Qua', v: 14.2 },
+    { d: 'Qui', v: 0 }, { d: 'Sex', v: 22 }, { d: 'Sáb', v: 18.4 }, { d: 'Dom', v: 32.1 },
+  ];
+  const max = Math.max(...bars.map(b => b.v));
+
+  return (
+    <div style={{flex: 1, overflow:'auto', background: C.bg}}>
+      <div style={{padding: '18px 22px 4px'}}>
+        <div style={{fontSize: 24, fontWeight: 800, color: C.ink, letterSpacing: -0.8}}>Estatísticas</div>
+      </div>
+      <div style={{padding: '14px 22px'}}>
+        <window.Segmented
+          options={[{value:'week', label:'Semana'}, {value:'month', label:'Mês'}, {value:'year', label:'Ano'}, {value:'all', label:'Tudo'}]}
+          value={period} onChange={setPeriod}
+        />
+      </div>
+
+      {/* Big totals */}
+      <div style={{padding: '4px 18px 14px'}}>
+        <div style={{background: C.forest, borderRadius: 22, padding: 20, color:'#FFF', position:'relative', overflow:'hidden'}}>
+          <svg viewBox="0 0 320 200" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.1}}>
+            <path d="M-10 140 Q 80 100 160 120 T 340 90" stroke="#FFF" strokeWidth="2" fill="none"/>
+          </svg>
+          <div style={{position:'relative', fontSize: 11, color:'rgba(255,255,255,0.65)', fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.8}}>Distância total · semana</div>
+          <div style={{position:'relative', fontSize: 48, fontFamily: window.BR.font.mono, fontWeight: 500, letterSpacing: -1.5, marginTop: 4, lineHeight: 1}}>
+            98.7<span style={{fontSize: 18, color:'rgba(255,255,255,0.6)', fontWeight: 400}}> km</span>
+          </div>
+          <div style={{position:'relative', marginTop: 6, fontSize: 13, color: C.leaf, display:'flex', alignItems:'center', gap: 4}}>
+            <window.Icon name="arrowUp" size={14} color={C.leaf}/> +23% vs semana anterior
+          </div>
+          {/* Bars */}
+          <div style={{position:'relative', marginTop: 20, display:'flex', gap: 6, alignItems:'flex-end', height: 80}}>
+            {bars.map((b, i) => (
+              <div key={i} style={{flex: 1, display:'flex', flexDirection:'column', alignItems:'center', gap: 6}}>
+                <div style={{
+                  width:'100%', height: `${Math.max(4, (b.v/max)*60)}px`,
+                  background: b.v > 0 ? C.primary : 'rgba(255,255,255,0.15)',
+                  borderRadius: 6,
+                }}/>
+                <div style={{fontSize: 10, color:'rgba(255,255,255,0.6)', fontWeight: 600}}>{b.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Metric grid */}
+      <div style={{padding: '4px 18px 14px', display:'grid', gridTemplateColumns:'1fr 1fr', gap: 8}}>
+        <window.Stat label="Tempo" value="6h 18m" icon={<window.Icon name="clock" size={13}/>}/>
+        <window.Stat label="Calorias" value="3 439" unit="kcal" icon={<window.Icon name="flame" size={13}/>}/>
+        <window.Stat label="Elevação" value="1 247" unit="m" icon={<window.Icon name="mountain" size={13}/>}/>
+        <window.Stat label="Vel. méd." value="18.2" unit="km/h" icon={<window.Icon name="speed" size={13}/>}/>
+      </div>
+
+      {/* Ranking */}
+      <div style={{padding: '4px 18px 20px'}}>
+        <div style={{fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 10, letterSpacing: -0.2}}>Ranking de amigos</div>
+        <div style={{background:'#FFF', border:`1px solid ${C.line}`, borderRadius: 18, overflow:'hidden'}}>
+          {[
+            {n: 1, name: 'Carlos R.', km: 142.3, you: false, medal:'🥇'},
+            {n: 2, name: 'Ana P.', km: 118.6, you: false, medal:'🥈'},
+            {n: 3, name: 'Você', km: 98.7, you: true, medal:'🥉'},
+            {n: 4, name: 'Bruno M.', km: 76.4, you: false},
+            {n: 5, name: 'Julia S.', km: 54.1, you: false},
+          ].map((r, i, arr) => (
+            <div key={r.n} style={{
+              padding: '12px 16px', display:'flex', alignItems:'center', gap: 12,
+              borderBottom: i < arr.length - 1 ? `1px solid ${C.lineSoft}` : 'none',
+              background: r.you ? C.primarySoft : 'transparent',
+            }}>
+              <div style={{fontSize: 13, fontWeight: 700, color: C.inkMute, fontFamily: window.BR.font.mono, width: 18}}>{r.n}</div>
+              <div style={{
+                width: 36, height: 36, borderRadius:'50%',
+                background: r.you ? C.primary : `hsl(${r.n*60}, 35%, 55%)`,
+                color:'#FFF', display:'flex', alignItems:'center', justifyContent:'center',
+                fontWeight: 700, fontSize: 14,
+              }}>{r.name[0]}</div>
+              <div style={{flex: 1, fontSize: 14, fontWeight: r.you ? 700 : 600, color: C.ink}}>{r.name}</div>
+              <div style={{fontSize: 14, fontWeight: 600, color: C.ink, fontFamily: window.BR.font.mono}}>{r.km} <span style={{color: C.inkMute, fontSize: 11}}>km</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+window.ProfileScreen = function ProfileScreen({ onLogout }) {
+  const C = window.BR.colors;
+  return (
+    <div style={{flex: 1, overflow:'auto', background: C.bg}}>
+      <div style={{padding: '18px 22px 24px', background: C.forest, color:'#FFF', position:'relative', overflow:'hidden'}}>
+        <svg viewBox="0 0 390 200" style={{position:'absolute', inset:0, width:'100%', height:'100%', opacity: 0.12}}>
+          <path d="M-10 140 Q 80 110 160 130 T 420 100" stroke="#FFF" strokeWidth="2" fill="none"/>
+          <path d="M-10 160 Q 100 130 180 150 T 420 120" stroke="#FFF" strokeWidth="1" fill="none"/>
+        </svg>
+        <div style={{position:'relative', display:'flex', alignItems:'center', gap: 14}}>
+          <div style={{
+            width: 72, height: 72, borderRadius:'50%',
+            background: `linear-gradient(135deg, ${C.moss}, ${C.primary})`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize: 28, fontWeight: 700, color:'#FFF',
+            border: '3px solid rgba(255,255,255,0.2)',
+          }}>M</div>
+          <div>
+            <div style={{fontSize: 20, fontWeight: 800, letterSpacing: -0.4}}>Maria Silva</div>
+            <div style={{fontSize: 13, color: 'rgba(255,255,255,0.7)'}}>@maria.bike · São Paulo</div>
+            <div style={{fontSize: 12, color: C.leaf, marginTop: 4, fontWeight: 600}}>Pedalando desde março 2024</div>
+          </div>
+        </div>
+        <div style={{position:'relative', marginTop: 18, display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 8}}>
+          {[
+            {l:'Rotas', v:'47'},
+            {l:'Distância', v:'1 247 km'},
+            {l:'Elevação', v:'12.4k m'},
+          ].map(s => (
+            <div key={s.l} style={{textAlign:'center'}}>
+              <div style={{fontSize: 18, fontFamily: window.BR.font.mono, fontWeight: 600}}>{s.v}</div>
+              <div style={{fontSize: 10, color:'rgba(255,255,255,0.6)', fontWeight: 600, textTransform:'uppercase', letterSpacing: 0.6, marginTop: 2}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{padding: 18, display:'flex', flexDirection:'column', gap: 8}}>
+        {[
+          {icon:'target', l:'Metas e desafios', s:'3 ativos'},
+          {icon:'trophy', l:'Conquistas', s:'12 de 30'},
+          {icon:'users', l:'Amigos', s:'18 seguindo'},
+          {icon:'bike', l:'Minhas bikes', s:'2 cadastradas'},
+          {icon:'settings', l:'Configurações'},
+        ].map(item => (
+          <button key={item.l} style={{
+            background:'#FFF', border:`1px solid ${C.line}`, borderRadius: 14,
+            padding: '14px 16px', display:'flex', alignItems:'center', gap: 12,
+            cursor:'pointer', textAlign:'left',
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: C.forestSoft, color: C.forest,
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              <window.Icon name={item.icon} size={18} color={C.forest}/>
+            </div>
+            <div style={{flex: 1}}>
+              <div style={{fontSize: 14, fontWeight: 600, color: C.ink}}>{item.l}</div>
+              {item.s && <div style={{fontSize: 12, color: C.inkMute}}>{item.s}</div>}
+            </div>
+            <window.Icon name="chevronRight" size={16} color={C.inkMute}/>
+          </button>
+        ))}
+
+        <button onClick={onLogout} style={{
+          background:'transparent', border:`1.5px solid ${C.line}`, borderRadius: 14,
+          padding: 14, marginTop: 12, cursor:'pointer',
+          fontSize: 14, fontWeight: 600, color: C.danger,
+          fontFamily: window.BR.font.sans,
+        }}>
+          Sair da conta
+        </button>
+      </div>
+    </div>
+  );
+};
+
+</script>
+
+<script type="text/babel" data-presets="react">
+
+const { useState, useEffect } = React;
+
+const TWEAK_DEFAULS = /*EDITMODE-BEGIN*/{
+  "authVariant": "classic",
+  "homeVariant": "a",
+  "weekGoalKm": 80
+}/*EDITMODE-END*/;
+
+function App() {
+  const C = window.BR.colors;
+  const [tweaks, setTweaks] = useState(() => {
+    try { return { ...TWEAK_DEFAULS, ...JSON.parse(localStorage.getItem('bikeroute_tweaks') || '{}') }; }
+    catch { return TWEAK_DEFAULS; }
+  });
+  const [editMode, setEditMode] = useState(false);
+  const [authed, setAuthed] = useState(() => localStorage.getItem('bikeroute_authed') === '1');
+  const [tab, setTab] = useState(() => localStorage.getItem('bikeroute_tab') || 'home');
+  const [screen, setScreen] = useState(null); // null | 'record' | 'detail' | 'edit'
+  const [activeRoute, setActiveRoute] = useState(null);
+
+  useEffect(() => { localStorage.setItem('bikeroute_tab', tab); }, [tab]);
+  useEffect(() => { localStorage.setItem('bikeroute_authed', authed ? '1' : '0'); }, [authed]);
+  useEffect(() => { localStorage.setItem('bikeroute_tweaks', JSON.stringify(tweaks)); }, [tweaks]);
+
+  // Tweaks protocol
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setEditMode(true);
+      if (e.data?.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({type: '__edit_mode_available'}, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweak = (k, v) => {
+    setTweaks(t => ({ ...t, [k]: v }));
+    window.parent.postMessage({type:'__edit_mode_set_keys', edits:{[k]:v}}, '*');
+  };
+
+  const handleNav = (id) => {
+    if (id === 'record') { setScreen('record'); return; }
+    setScreen(null);
+    setTab(id === 'friends' || id === 'goals' ? 'stats' : id);
+  };
+
+  const openRoute = (r) => { setActiveRoute(r); setScreen('detail'); };
+
+  // Screen routing
+  let content;
+  if (!authed) {
+    content = tweaks.authVariant === 'hero'
+      ? <window.AuthScreenHero onAuth={() => setAuthed(true)}/>
+      : <window.AuthScreen onAuth={() => setAuthed(true)}/>;
+  } else if (screen === 'record') {
+    content = <window.RecordScreen onBack={() => setScreen(null)} onSave={() => { setScreen(null); setTab('routes'); }}/>;
+  } else if (screen === 'detail') {
+    content = <window.RouteDetailScreen route={activeRoute} onBack={() => setScreen(null)} onEdit={() => setScreen('edit')}/>;
+  } else if (screen === 'edit') {
+    content = <window.EditRouteScreen route={activeRoute} onBack={() => setScreen('detail')} onSave={() => setScreen('detail')}/>;
+  } else if (tab === 'home') {
+    content = <window.HomeScreen variant={tweaks.homeVariant} weekGoal={tweaks.weekGoalKm}
+      onNav={handleNav} onRecord={() => setScreen('record')} onOpenRoute={openRoute}/>;
+  } else if (tab === 'routes') {
+    content = <window.RoutesListScreen onOpen={openRoute} onRecord={() => setScreen('record')}/>;
+  } else if (tab === 'stats') {
+    content = <window.StatsScreen/>;
+  } else if (tab === 'profile') {
+    content = <window.ProfileScreen onLogout={() => { setAuthed(false); setScreen(null); setTab('home'); }}/>;
+  }
+
+  const showTabs = authed && !screen;
+
+  return (
+    <div style={{
+      minHeight:'100vh', width:'100%',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding: '40px 20px', gap: 40,
+      background: `radial-gradient(circle at 30% 10%, #F5F1E8 0%, #E8E2D2 100%)`,
+    }}>
+      <window.PhoneChrome>
+        <div data-screen-label={
+          !authed ? '01 Login' : screen === 'record' ? '03 Gravar rota'
+          : screen === 'detail' ? '05 Detalhe da rota' : screen === 'edit' ? '06 Editar rota'
+          : tab === 'home' ? '02 Home' : tab === 'routes' ? '04 Minhas rotas'
+          : tab === 'stats' ? '07 Stats' : '08 Perfil'
+        } style={{flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative'}}>
+          {content}
+          {showTabs && (
+            <window.BottomNav active={tab === 'stats' ? 'stats' : tab} onChange={handleNav}/>
+          )}
+        </div>
+      </window.PhoneChrome>
+
+      {editMode && (
+        <TweaksPanel tweaks={tweaks} update={updateTweak}/>
+      )}
+    </div>
+  );
+}
+
+function TweaksPanel({ tweaks, update }) {
+  const C = window.BR.colors;
+  return (
+    <div style={{
+      position: 'fixed', right: 20, bottom: 20, width: 280,
+      background:'#FFF', borderRadius: 18, padding: 18,
+      border: `1px solid ${C.line}`, boxShadow: window.BR.shadow.lg,
+      fontFamily: window.BR.font.sans, zIndex: 100,
+    }}>
+      <div style={{fontSize: 13, fontWeight: 800, letterSpacing: -0.2, color: C.ink, marginBottom: 14,
+        display:'flex', alignItems:'center', gap: 6}}>
+        <div style={{width: 6, height: 6, borderRadius:'50%', background: C.primary}}/>
+        Tweaks
+      </div>
+
+      <div style={{marginBottom: 14}}>
+        <div style={{fontSize: 11, fontWeight: 700, color: C.inkMute, textTransform:'uppercase', letterSpacing: 0.8, marginBottom: 6}}>Tela de login</div>
+        <div style={{display:'flex', gap: 6}}>
+          {[{v:'classic', l:'Clássico'}, {v:'hero', l:'Hero imersivo'}].map(o => (
+            <button key={o.v} onClick={()=>update('authVariant', o.v)} style={{
+              flex: 1, padding: '8px 10px', borderRadius: 10,
+              background: tweaks.authVariant === o.v ? C.ink : '#FFF',
+              color: tweaks.authVariant === o.v ? '#FFF' : C.ink,
+              border: `1px solid ${tweaks.authVariant === o.v ? C.ink : C.line}`,
+              fontSize: 12, fontWeight: 600, cursor:'pointer',
+            }}>{o.l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom: 14}}>
+        <div style={{fontSize: 11, fontWeight: 700, color: C.inkMute, textTransform:'uppercase', letterSpacing: 0.8, marginBottom: 6}}>Dashboard (Home)</div>
+        <div style={{display:'flex', gap: 6}}>
+          {[{v:'a', l:'A · ring grande'}, {v:'b', l:'B · cards'}].map(o => (
+            <button key={o.v} onClick={()=>update('homeVariant', o.v)} style={{
+              flex: 1, padding: '8px 10px', borderRadius: 10,
+              background: tweaks.homeVariant === o.v ? C.ink : '#FFF',
+              color: tweaks.homeVariant === o.v ? '#FFF' : C.ink,
+              border: `1px solid ${tweaks.homeVariant === o.v ? C.ink : C.line}`,
+              fontSize: 12, fontWeight: 600, cursor:'pointer',
+            }}>{o.l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom: 4}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 6}}>
+          <div style={{fontSize: 11, fontWeight: 700, color: C.inkMute, textTransform:'uppercase', letterSpacing: 0.8}}>Meta semanal</div>
+          <div style={{fontSize: 12, fontFamily: window.BR.font.mono, fontWeight: 600}}>{tweaks.weekGoalKm} km</div>
+        </div>
+        <input type="range" min="20" max="200" step="10" value={tweaks.weekGoalKm}
+          onChange={e => update('weekGoalKm', +e.target.value)}
+          style={{width:'100%', accentColor: C.primary}}/>
+      </div>
+
+      <div style={{marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.lineSoft}`,
+        fontSize: 11, color: C.inkMute, lineHeight: 1.5}}>
+        Dica: use o menu inferior e botão central laranja para navegar entre telas.
+      </div>
+    </div>
+  );
+}
+
+// Wait for all babel scripts, then mount
+const waitAndMount = () => {
+  if (!window.BR || !window.AuthScreen || !window.HomeScreen || !window.RecordScreen ||
+      !window.RoutesListScreen || !window.StatsScreen || !window.ProfileScreen) {
+    setTimeout(waitAndMount, 60);
+    return;
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+};
+waitAndMount();
+
+</script>
+
+</body>
+</html>
