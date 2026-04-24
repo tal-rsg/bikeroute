@@ -8,6 +8,7 @@ import Icon from '../components/Icon';
 import { useAuth } from '../store/auth';
 import { useRoutes } from '../store/routes';
 import { exportRoutesJSON, getBikes, saveBike, deleteBike, type LocalBike } from '../lib/db';
+import { syncAll } from '../lib/sync';
 
 // ─── Tipos de bike ────────────────────────────────────────────────────────────
 
@@ -46,7 +47,9 @@ function BikeFormModal({ userId, bike, onSave, onClose }: {
       year: year ? Number(year) : undefined,
       createdAt: bike?.createdAt ?? now,
       updatedAt: now,
+      syncedAt: undefined,  // marca para sync
     });
+    syncAll().catch(console.error);  // dispara sync sem bloquear
     onSave();
   }
 
@@ -109,6 +112,7 @@ function BikesModal({ userId, onClose }: { userId: string; onClose: () => void }
 
   async function handleDelete(id: string) {
     await deleteBike(id);
+    syncAll().catch(console.error);
     load();
   }
 

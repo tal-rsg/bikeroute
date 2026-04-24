@@ -49,6 +49,8 @@ export interface LocalBike {
   year?: number;
   createdAt: number;
   updatedAt: number;
+  syncedAt?: number;
+  deletedAt?: number;
 }
 
 // ─── Banco Dexie (IndexedDB) ──────────────────────────────────────────────────
@@ -65,7 +67,7 @@ class BikeRouteDB extends Dexie {
       routePoints: '++id, routeId, timestamp, syncedAt',
     });
     this.version(2).stores({
-      bikes: 'id, userId, type, createdAt',
+      bikes: 'id, userId, type, createdAt, syncedAt, deletedAt',
     });
   }
 }
@@ -142,11 +144,25 @@ export async function saveBike(bike: LocalBike): Promise<void> {
 }
 
 export async function getBikes(userId: string): Promise<LocalBike[]> {
-  return db.bikes.where('userId').equals(userId).sortBy('createdAt');
+  return db.bikes
+    .where('userId').equals(userId)
+    .filter(b => !b.deletedAt)
+    .sortBy('createdAt');
 }
 
 export async function deleteBike(id: string): Promise<void> {
-  await db.bikes.delete(id);
+  await db.bikes.update(id, { deletedAt: Date.now(), updatedAt: Date.now(), syncedAt: undefined });
+}
+
+export async function getUnsyncedBikes(userId: string): Promise<LocalBike[]> {
+  return db.bikes
+    .where('userId').equals(userId)
+    .filter(b => b.syncedAt === undefined)
+    .toArray();
+}
+
+export async function markBikeSynced(id: string): Promise<void> {
+  await db.bikes.update(id, { syncedAt: Date.now() });
 }
 
 // ─── Export JSON ──────────────────────────────────────────────────────────────

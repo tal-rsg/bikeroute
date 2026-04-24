@@ -5,6 +5,8 @@ import {
   getUnsyncedPoints,
   markRouteSynced,
   markPointsSynced,
+  getUnsyncedBikes,
+  markBikeSynced,
   db,
   type LocalRoute,
   type LocalRoutePoint,
@@ -57,14 +59,23 @@ export async function syncAll(): Promise<void> {
 
   syncInProgress = true;
   try {
-    const unsynced = await getUnsyncedRoutes(user.id);
-    const total = unsynced.length;
+    const [unsyncedRoutes, unsyncedBikes] = await Promise.all([
+      getUnsyncedRoutes(user.id),
+      getUnsyncedBikes(user.id),
+    ]);
+    const total = unsyncedRoutes.length + unsyncedBikes.length;
     if (total === 0) { emit('idle', 0); return; }
 
     emit('syncing', total);
     let done = 0;
 
-    for (const route of unsynced) {
+    for (const bike of unsyncedBikes) {
+      await syncBike(bike);
+      done++;
+      emit('syncing', total - done);
+    }
+
+    for (const route of unsyncedRoutes) {
       await syncRoute(route);
       done++;
       emit('syncing', total - done);
@@ -125,6 +136,30 @@ async function syncRoute(route: LocalRoute): Promise<void> {
   }
 
   await markRouteSynced(route.id);
+}
+
+// ─── Sync de bike ─────────────────────────────────────────────────────────────
+
+async function syncBike(bike: import('./db').LocalBike): Promise<void> {
+  if (bike.deletedAt) {
+    const { error } = await supabase.from('bikes')
+      .update({ deleted_at: new Date(bike.deletedAt).toISOString() })
+      .eq('id', bike.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('bikes').upsert({
+      id: bike.id,
+      user_id: bike.userId,
+      name: bike.name,
+      type: bike.type,
+      brand: bike.brand ?? null,
+      model: bike.model ?? null,
+      year: bike.year ?? null,
+      updated_at: new Date(bike.updatedAt).toISOString(),
+    }, { onConflict: 'id' });
+    if (error) throw error;
+  }
+  await markBikeSynced(bike.id);
 }
 
 // ─── Sync de uma rota específica (chamado após salvar) ────────────────────────
