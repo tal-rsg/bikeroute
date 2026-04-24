@@ -3,7 +3,7 @@ import {
   getRoutes, getRoute, updateRoute, softDeleteRoute,
   exportRoutesJSON, exportRouteGPX, type LocalRoute,
 } from '../lib/db';
-import { syncAll } from '../lib/sync';
+import { syncAll, hydrateFromCloud } from '../lib/sync';
 
 interface RoutesStore {
   routes: LocalRoute[];
@@ -23,6 +23,11 @@ export const useRoutes = create<RoutesStore>((set, get) => ({
 
   load: async (userId) => {
     set({ loading: true });
+    // Primeiro mostra o que há localmente (resposta imediata)
+    const local = await getRoutes(userId);
+    set({ routes: local });
+    // Depois hidrata do Supabase (recupera dados após reinstalação)
+    await hydrateFromCloud(userId);
     const routes = await getRoutes(userId);
     set({ routes, loading: false });
   },

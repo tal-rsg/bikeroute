@@ -7,6 +7,8 @@ import {
   markPointsSynced,
   getUnsyncedBikes,
   markBikeSynced,
+  getRoutes,
+  getBikes,
   db,
   type LocalRoute,
   type LocalRoutePoint,
@@ -177,4 +179,81 @@ export async function syncRouteNow(routeId: string): Promise<void> {
 
 export function getOnlineStatus() {
   return isOnline;
+}
+
+// ─── Hidratação inicial: baixa rotas e bikes do Supabase para o Dexie ────────
+// Chamada na primeira vez que o usuário faz login (banco local vazio após
+// reinstalação ou troca de celular).
+
+export async function hydrateFromCloud(userId: string): Promise<void> {
+  try {
+    const [localRoutes, localBikes] = await Promise.all([
+      getRoutes(userId),
+      getBikes(userId),
+    ]);
+
+    // Baixa rotas do Supabase que não existem localmente
+    const localRouteIds = new Set(localRoutes.map(r => r.id));
+    const { data: cloudRoutes } = await supabase
+      .from('routes')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('started_at', { ascending: false });
+
+    if (cloudRoutes) {
+      for (const r of cloudRoutes) {
+        if (localRouteIds.has(r.id)) continue;
+        await db.routes.put({
+          id: r.id,
+          userId: r.user_id,
+          name: r.name,
+          description: r.description ?? '',
+          type: r.type ?? 'urbano',
+          difficulty: r.difficulty ?? 'easy',
+          privacy: r.privacy ?? 'public',
+          distanceKm: Number(r.distance_km ?? 0),
+          durationSeconds: r.duration_seconds ?? 0,
+          elevationGain: r.elevation_gain ?? 0,
+          elevationLoss: r.elevation_loss ?? 0,
+          avgSpeed: Number(r.avg_speed ?? 0),
+          calories: r.calories ?? 0,
+          coverImage: r.cover_image ?? undefined,
+          startedAt: r.started_at ? new Date(r.started_at).getTime() : Date.now(),
+          finishedAt: r.finished_at ? new Date(r.finished_at).getTime() : Date.now(),
+          createdAt: new Date(r.created_at).getTime(),
+          updatedAt: new Date(r.updated_at).getTime(),
+          syncedAt: Date.now(),  // já veio do servidor — marca como sincronizado
+        });
+      }
+    }
+
+    // Baixa bikes do Supabase que não existem localmente
+    const localBikeIds = new Set(localBikes.map(b => b.id));
+    const { data: cloudBikes } = await supabase
+      .from('bikes')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null);
+
+    if (cloudBikes) {
+      for (const b of cloudBikes) {
+        if (localBikeIds.has(b.id)) continue;
+        await db.bikes.put({
+          id: b.id,
+          userId: b.user_id,
+          name: b.name,
+          type: b.type,
+          brand: b.brand ?? undefined,
+          model: b.model ?? undefined,
+          year: b.year ?? undefined,
+          createdAt: new Date(b.created_at).getTime(),
+          updatedAt: new Date(b.updated_at).getTime(),
+          syncedAt: Date.now(),
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[sync] hydrateFromCloud falhou:', err);
+  }
 }
