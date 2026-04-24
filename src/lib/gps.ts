@@ -1,5 +1,8 @@
-import { BackgroundGeolocation } from '@capacitor-community/background-geolocation';
-import type { Location, CallbackError } from '@capacitor-community/background-geolocation';
+import { registerPlugin } from '@capacitor/core';
+import type { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation';
+
+// O plugin não exporta a instância via TS; registramos manualmente (padrão Capacitor)
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 import type { LocalRoutePoint } from './db';
 
 // ─── Cálculos geoespaciais ────────────────────────────────────────────────────
@@ -90,7 +93,7 @@ class GpsTracker {
           stale: false,
           distanceFilter: 3,
         },
-        (location: Location | null, error: CallbackError | null) => {
+        (location: { latitude: number; longitude: number; altitude: number | null; speed: number | null; accuracy: number | null; time: number } | null, error: { code: string; message: string } | null) => {
           if (error || !location) return;
           const point: LocalRoutePoint = {
             routeId: routeId,
