@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
 
       - name: Install deps
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build web
         run: npm run build

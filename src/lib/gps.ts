@@ -1,9 +1,9 @@
-import { Geolocation, type WatchPositionCallback } from '@capacitor/geolocation';
+import BackgroundGeolocation from '@capacitor-community/background-geolocation';
 import type { LocalRoutePoint } from './db';
 
 // ─── Cálculos geoespaciais ────────────────────────────────────────────────────
 
-const R = 6371000; // raio da Terra em metros
+const R = 6371000;
 
 export function haversineDistance(
   lat1: number, lng1: number,
@@ -30,7 +30,6 @@ export function calcElevation(points: { altitude: number }[]): { gain: number; l
 }
 
 export function calcCalories(distanceKm: number, durationSeconds: number): number {
-  // Estimativa: ~35 kcal/km para ciclismo moderado
   return Math.round(distanceKm * 35 + durationSeconds / 60 * 0.1);
 }
 
@@ -63,15 +62,6 @@ class GpsTracker {
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private onFlush: ((points: LocalRoutePoint[]) => Promise<void>) | null = null;
 
-  async requestPermissions(): Promise<boolean> {
-    try {
-      const perm = await Geolocation.requestPermissions();
-      return perm.location === 'granted';
-    } catch {
-      return false;
-    }
-  }
-
   async start(
     routeId: string,
     callbacks: {
@@ -80,9 +70,6 @@ class GpsTracker {
       onFlush: (points: LocalRoutePoint[]) => Promise<void>;
     },
   ): Promise<boolean> {
-    const ok = await this.requestPermissions();
-    if (!ok) return false;
-
     this.routeId = routeId;
     this.startTime = Date.now();
     this.points = [];
@@ -91,32 +78,37 @@ class GpsTracker {
     this.onPoint = callbacks.onPoint;
     this.onFlush = callbacks.onFlush;
 
-    // Flush ao banco local a cada 10 segundos
     this.flushTimer = setInterval(() => this.flush(), 10_000);
 
-    const handler: WatchPositionCallback = (position, err) => {
-      if (err || !position) return;
-      const { latitude: lat, longitude: lng, altitude, speed, accuracy } = position.coords;
-      const point: LocalRoutePoint = {
-        routeId: routeId,
-        lat,
-        lng,
-        altitude: altitude ?? 0,
-        speed: speed ? speed * 3.6 : 0, // m/s → km/h
-        accuracy: accuracy ?? 0,
-        timestamp: position.timestamp,
-      };
-      this.addPoint(point);
-    };
-
-    this.watchId = (
-      await Geolocation.watchPosition(
-        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
-        handler,
-      )
-    ) as unknown as string;
-
-    return true;
+    try {
+      this.watchId = await BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage: 'Gravando rota em segundo plano',
+          backgroundTitle: 'BikeRoute está gravando sua rota',
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 3,
+        },
+        (location, error) => {
+          if (error || !location) return;
+          const point: LocalRoutePoint = {
+            routeId: routeId,
+            lat: location.latitude,
+            lng: location.longitude,
+            altitude: location.altitude ?? 0,
+            speed: location.speed ? location.speed * 3.6 : 0,
+            accuracy: location.accuracy ?? 0,
+            timestamp: location.time ?? Date.now(),
+          };
+          this.addPoint(point);
+        },
+      );
+      return true;
+    } catch (e) {
+      console.error('GPS start error:', e);
+      this.cleanup();
+      return false;
+    }
   }
 
   private addPoint(point: LocalRoutePoint) {
@@ -134,21 +126,24 @@ class GpsTracker {
     try {
       await this.onFlush(batch);
     } catch {
-      // Recoloca no buffer em caso de falha
       this.buffer = [...batch, ...this.buffer];
+    }
+  }
+
+  private cleanup() {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
     }
   }
 
   async stop(): Promise<LocalRoutePoint[]> {
     if (this.watchId) {
-      await Geolocation.clearWatch({ id: this.watchId });
+      await BackgroundGeolocation.removeWatcher({ id: this.watchId });
       this.watchId = null;
     }
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
-      this.flushTimer = null;
-    }
-    await this.flush(); // flush final
+    this.cleanup();
+    await this.flush();
     const pts = [...this.points];
     this.points = [];
     this.buffer = [];
@@ -187,5 +182,4 @@ class GpsTracker {
   }
 }
 
-// Singleton — uma instância por app
 export const gpsTracker = new GpsTracker();

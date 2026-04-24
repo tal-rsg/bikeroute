@@ -37,17 +37,35 @@ export interface LocalRoutePoint {
   syncedAt?: number;
 }
 
+// ─── Bike ─────────────────────────────────────────────────────────────────────
+
+export interface LocalBike {
+  id: string;
+  userId: string;
+  name: string;
+  type: 'estrada' | 'mountain' | 'ebike';
+  brand?: string;
+  model?: string;
+  year?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // ─── Banco Dexie (IndexedDB) ──────────────────────────────────────────────────
 
 class BikeRouteDB extends Dexie {
   routes!: Table<LocalRoute, string>;
   routePoints!: Table<LocalRoutePoint, number>;
+  bikes!: Table<LocalBike, string>;
 
   constructor() {
     super('BikeRouteDB');
     this.version(1).stores({
       routes:      'id, userId, type, startedAt, updatedAt, syncedAt, deletedAt',
       routePoints: '++id, routeId, timestamp, syncedAt',
+    });
+    this.version(2).stores({
+      bikes: 'id, userId, type, createdAt',
     });
   }
 }
@@ -115,6 +133,20 @@ export async function markPointsSynced(routeId: string): Promise<void> {
 
 export async function markRouteSynced(id: string): Promise<void> {
   await db.routes.update(id, { syncedAt: Date.now() });
+}
+
+// ─── Helpers de bikes ─────────────────────────────────────────────────────────
+
+export async function saveBike(bike: LocalBike): Promise<void> {
+  await db.bikes.put(bike);
+}
+
+export async function getBikes(userId: string): Promise<LocalBike[]> {
+  return db.bikes.where('userId').equals(userId).sortBy('createdAt');
+}
+
+export async function deleteBike(id: string): Promise<void> {
+  await db.bikes.delete(id);
 }
 
 // ─── Export JSON ──────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ type Screen = null | 'record' | 'detail' | 'edit';
 
 export default function App() {
   const { user, loading, init } = useAuth();
-  const { load } = useRoutes();
+  const { load, routes } = useRoutes();
   const [tab, setTab] = useState<Tab>('home');
   const [screen, setScreen] = useState<Screen>(null);
   const [activeRoute, setActiveRoute] = useState<LocalRoute | null>(null);
@@ -75,6 +75,11 @@ export default function App() {
     setTab(id as Tab);
   };
 
+  // Always use the freshest copy from the store (fixes stale data after edit)
+  const currentRoute = activeRoute
+    ? (routes.find(r => r.id === activeRoute.id) ?? activeRoute)
+    : null;
+
   const openRoute = (r: LocalRoute) => { setActiveRoute(r); setScreen('detail'); };
 
   const showTabs = !screen;
@@ -83,10 +88,10 @@ export default function App() {
 
   if (screen === 'record') {
     content = <RecordScreen onBack={() => setScreen(null)} onSaved={() => { setScreen(null); setTab('routes'); }}/>;
-  } else if (screen === 'detail' && activeRoute) {
-    content = <RouteDetailScreen route={activeRoute} onBack={() => setScreen(null)} onEdit={() => setScreen('edit')}/>;
-  } else if (screen === 'edit' && activeRoute) {
-    content = <RouteEditScreen route={activeRoute} onBack={() => setScreen('detail')} onSaved={() => setScreen('detail')}/>;
+  } else if (screen === 'detail' && currentRoute) {
+    content = <RouteDetailScreen route={currentRoute} onBack={() => setScreen(null)} onEdit={() => setScreen('edit')}/>;
+  } else if (screen === 'edit' && currentRoute) {
+    content = <RouteEditScreen route={currentRoute} onBack={() => setScreen('detail')} onSaved={() => setScreen('detail')}/>;
   } else if (tab === 'home') {
     content = <HomeScreen onRecord={() => setScreen('record')} onNav={handleNav} onOpenRoute={openRoute}/>;
   } else if (tab === 'routes') {
