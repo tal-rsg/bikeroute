@@ -1,4 +1,5 @@
-import BackgroundGeolocation from '@capacitor-community/background-geolocation';
+import { BackgroundGeolocation } from '@capacitor-community/background-geolocation';
+import type { Location, CallbackError } from '@capacitor-community/background-geolocation';
 import type { LocalRoutePoint } from './db';
 
 // ─── Cálculos geoespaciais ────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ class GpsTracker {
           stale: false,
           distanceFilter: 3,
         },
-        (location, error) => {
+        (location: Location | null, error: CallbackError | null) => {
           if (error || !location) return;
           const point: LocalRoutePoint = {
             routeId: routeId,
